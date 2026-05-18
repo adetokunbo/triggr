@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+import logging
+from typing import Awaitable, Callable, Generic, TypeVar
+
+from .outcome import TaskOutcome
+from .protocols import TaskWorker
+from .retry import AUTOMATION, RetryPolicy, RetriesExhausted, retry
+
+T = TypeVar("T")
+
+logger = logging.getLogger(__name__)
+
+
+class TaskProcessor(Generic[T]):
+    """Wraps a TaskWorker with retry and staleness detection.
+
+    Independently testable — does not depend on triggers, polling,
+    or lifecycle management.
+    """
+
+    def __init__(
+        self,
+        worker: TaskWorker[T],
+        retry_policy: RetryPolicy = AUTOMATION,
+        ready_gate: Callable[[], Awaitable[None]] | None = None,
+        name: str = "",
+    ) -> None:
+        self._worker = worker
+        self._retry_policy = retry_policy
+        self._ready_gate = ready_gate
+        self._logger = logging.getLogger(f"processor.{name}" if name else __name__)
+
+    async def process(self, task: T) -> bool:
+        """Process a single task with retry.
+
+        Returns True if the task succeeded or was stale.
+        """
+        try:
+            outcome = await retry(
+                self._retry_policy,
+                lambda: self._attempt(task),
+                description=f"{self._name_of(task)}",
+                is_retryable=self._is_retryable,
+            )
+        except RetriesExhausted as e:
+            self._logger.error("Task %s failed after retries: %s", task, e.last_error)
+            return False
+
+        if outcome == TaskOutcome.SUCCESS:
+            self._logger.info("Task %s completed", task)
+            return True
+        elif outcome == TaskOutcome.STALE:
+            self._logger.debug("Task %s is stale", task)
+            return True
+        elif outcome == TaskOutcome.FAILED:
+            self._logger.warning("Task %s failed", task)
+            return False
+        else:  # NOOP
+            return False
+
+    async def _attempt(self, task: T) -> TaskOutcome:
+        if self._ready_gate is not None:
+            await self._ready_gate()
+        try:
+            return await self._worker.complete_task(task)
+        except Exception:
+            if await self._worker.is_stale_task(task):
+                return TaskOutcome.STALE
+            raise
+
+    def _is_retryable(self, exc: Exception) -> bool:
+        return True
+
+    def _name_of(self, task: T) -> str:
+        return str(task)

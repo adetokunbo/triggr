@@ -1,0 +1,110 @@
+from __future__ import annotations
+
+import asyncio
+import pytest
+
+from triggers import AutomationConfig, PollingTaskTrigger, TaskOutcome
+from .helpers import FixedSource, RecordingWorker
+
+
+@pytest.fixture
+def config():
+    return AutomationConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
+
+
+class TestPollingTaskTrigger:
+    @pytest.mark.asyncio
+    async def test_processes_all_tasks(self, config):
+        source = FixedSource(["a", "b", "c"], once=True)
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger.pause()
+
+        result = await trigger.run_once()
+
+        assert result is True
+        assert worker.completed == ["a", "b", "c"]
+
+    @pytest.mark.asyncio
+    async def test_returns_false_when_no_tasks(self, config):
+        source = FixedSource[str]([], once=True)
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger.pause()
+
+        result = await trigger.run_once()
+
+        assert result is False
+        assert worker.completed == []
+
+    @pytest.mark.asyncio
+    async def test_polls_repeatedly_until_closed(self, config):
+        source = FixedSource(["x"])
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+
+        trigger.run()
+        await asyncio.sleep(0.05)
+        trigger.close()
+
+        assert len(worker.completed) >= 2
+
+    @pytest.mark.asyncio
+    async def test_pause_and_resume(self, config):
+        source = FixedSource(["task"])
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+
+        trigger.run()
+        await asyncio.sleep(0.03)
+        count_before = len(worker.completed)
+
+        trigger.pause()
+        await asyncio.sleep(0.03)
+        count_while_paused = len(worker.completed)
+
+        trigger.resume()
+        await asyncio.sleep(0.03)
+        count_after = len(worker.completed)
+
+        trigger.close()
+
+        assert count_while_paused == count_before or count_while_paused == count_before + 1
+        assert count_after > count_while_paused
+
+    @pytest.mark.asyncio
+    async def test_failed_tasks_do_not_stop_loop(self, config):
+        source = FixedSource(["ok", "fail"])
+        fail_worker = RecordingWorker[str](outcome=TaskOutcome.FAILED)
+        trigger = PollingTaskTrigger(source, fail_worker, config, name="test")
+
+        trigger.run()
+        await asyncio.sleep(0.03)
+        trigger.close()
+
+        assert len(fail_worker.completed) >= 2
+
+    @pytest.mark.asyncio
+    async def test_respects_parallelism(self, config):
+        config.parallelism = 2
+        tasks = ["a", "b", "c", "d", "e"]
+        source = FixedSource(tasks, once=True)
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger.pause()
+
+        await trigger.run_once()
+
+        assert set(worker.completed) == set(tasks)
+
+    @pytest.mark.asyncio
+    async def test_is_healthy_while_running(self, config):
+        source = FixedSource(["x"])
+        worker = RecordingWorker[str]()
+        trigger = PollingTaskTrigger(source, worker, config, name="test")
+
+        assert not trigger.is_healthy()
+        trigger.run()
+        await asyncio.sleep(0.01)
+        assert trigger.is_healthy()
+        trigger.close()
