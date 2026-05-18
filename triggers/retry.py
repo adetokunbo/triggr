@@ -42,6 +42,7 @@ async def retry(
     operation: Callable[[], Awaitable[T]],
     description: str,
     is_retryable: Callable[[Exception], bool] = lambda _: True,
+    between_attempts: Callable[[], Awaitable[None]] | None = None,
 ) -> T:
     last_error: Exception | None = None
     for attempt in range(policy.max_retries + 1):
@@ -60,5 +61,7 @@ async def retry(
                 delay,
                 e,
             )
+            if between_attempts is not None:
+                await between_attempts()
             await asyncio.sleep(delay)
     raise RetriesExhausted(policy.max_retries + 1, last_error)  # type: ignore[arg-type]

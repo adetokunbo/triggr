@@ -6,6 +6,7 @@ import random
 from typing import Awaitable, Callable
 
 from .lifecycle import Lifecycle
+from .protocols import AllTransient, ErrorClassifier, ErrorKind
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class PollingLoop:
         interval: float,
         jitter: float = 0.2,
         max_silent_failures: int = 3,
+        error_classifier: ErrorClassifier | None = None,
         name: str = "",
     ) -> None:
         self._callback = callback
@@ -32,6 +34,7 @@ class PollingLoop:
         self._interval = interval
         self._jitter = jitter
         self._max_silent_failures = max_silent_failures
+        self._classifier = error_classifier or AllTransient()
         self._name = name
         self._consecutive_failures = 0
         self._work_finished = asyncio.Event()
@@ -63,6 +66,10 @@ class PollingLoop:
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
+                    kind = self._classifier.classify(e)
+                    if kind == ErrorKind.FATAL:
+                        self._logger.error("Fatal error in polling loop: %s", e)
+                        break
                     self._consecutive_failures += 1
                     if self._consecutive_failures > self._max_silent_failures:
                         self._logger.warning(

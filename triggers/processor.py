@@ -4,7 +4,7 @@ import logging
 from typing import Awaitable, Callable, Generic, TypeVar
 
 from .outcome import TaskOutcome
-from .protocols import TaskWorker
+from .protocols import AllTransient, ErrorClassifier, ErrorKind, TaskWorker
 from .retry import AUTOMATION, RetryPolicy, RetriesExhausted, retry
 
 T = TypeVar("T")
@@ -24,11 +24,13 @@ class TaskProcessor(Generic[T]):
         worker: TaskWorker[T],
         retry_policy: RetryPolicy = AUTOMATION,
         ready_gate: Callable[[], Awaitable[None]] | None = None,
+        error_classifier: ErrorClassifier | None = None,
         name: str = "",
     ) -> None:
         self._worker = worker
         self._retry_policy = retry_policy
         self._ready_gate = ready_gate
+        self._classifier = error_classifier or AllTransient()
         self._logger = logging.getLogger(f"processor.{name}" if name else __name__)
 
     async def process(self, task: T) -> bool:
@@ -40,8 +42,9 @@ class TaskProcessor(Generic[T]):
             outcome = await retry(
                 self._retry_policy,
                 lambda: self._attempt(task),
-                description=f"{self._name_of(task)}",
+                description=self._name_of(task),
                 is_retryable=self._is_retryable,
+                between_attempts=self._ready_gate,
             )
         except RetriesExhausted as e:
             self._logger.error("Task %s failed after retries: %s", task, e.last_error)
@@ -70,7 +73,7 @@ class TaskProcessor(Generic[T]):
             raise
 
     def _is_retryable(self, exc: Exception) -> bool:
-        return True
+        return self._classifier.classify(exc) == ErrorKind.TRANSIENT
 
     def _name_of(self, task: T) -> str:
         return str(task)

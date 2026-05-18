@@ -3,7 +3,15 @@ from .lifecycle import Lifecycle
 from .outcome import TaskOutcome
 from .polling_loop import PollingLoop
 from .processor import TaskProcessor
-from .protocols import HasHealth, ReadyTaskLister, TaskSource, TaskWorker
+from .protocols import (
+    AllTransient,
+    ErrorClassifier,
+    ErrorKind,
+    HasHealth,
+    ReadyTaskLister,
+    TaskSource,
+    TaskWorker,
+)
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledTaskSource
 from .triggers import PeriodicTask, PeriodicTrigger, PollingTaskTrigger, StreamTaskTrigger
@@ -14,6 +22,9 @@ __all__ = [
     "TaskOutcome",
     "PollingLoop",
     "TaskProcessor",
+    "AllTransient",
+    "ErrorClassifier",
+    "ErrorKind",
     "HasHealth",
     "ReadyTaskLister",
     "TaskSource",
