@@ -11,7 +11,7 @@ from .lifecycle import Lifecycle
 from .outcome import TaskOutcome
 from .polling_loop import PollingLoop
 from .processor import TaskProcessor
-from .protocols import HasHealth, TaskSource, TaskWorker
+from .protocols import ErrorClassifier, HasHealth, TaskSource, TaskWorker
 from .retry import AUTOMATION, RetryPolicy
 
 T = TypeVar("T")
@@ -32,6 +32,7 @@ class PollingTaskTrigger(Generic[T]):
         worker: TaskWorker[T],
         config: AutomationConfig,
         retry_policy: RetryPolicy = AUTOMATION,
+        error_classifier: ErrorClassifier | None = None,
         name: str = "",
     ) -> None:
         self._source = source
@@ -40,6 +41,7 @@ class PollingTaskTrigger(Generic[T]):
             worker,
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
+            error_classifier=error_classifier,
             name=name,
         )
         self._loop = PollingLoop(
@@ -48,6 +50,7 @@ class PollingTaskTrigger(Generic[T]):
             interval=config.polling_interval,
             jitter=config.polling_jitter,
             max_silent_failures=config.max_num_silent_polling_retries,
+            error_classifier=error_classifier,
             name=name,
         )
         self._parallelism = config.parallelism
@@ -107,6 +110,7 @@ class StreamTaskTrigger(Generic[T]):
         source: AsyncIterator[T],
         worker: TaskWorker[T],
         retry_policy: RetryPolicy = AUTOMATION,
+        error_classifier: ErrorClassifier | None = None,
         name: str = "",
     ) -> None:
         self._source = source
@@ -115,6 +119,7 @@ class StreamTaskTrigger(Generic[T]):
             worker,
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
+            error_classifier=error_classifier,
             name=name,
         )
         self._task: asyncio.Task[None] | None = None
@@ -173,6 +178,7 @@ class PeriodicTrigger:
         worker: TaskWorker[PeriodicTask],
         interval: float,
         retry_policy: RetryPolicy = AUTOMATION,
+        error_classifier: ErrorClassifier | None = None,
         name: str = "",
     ) -> None:
         self._lifecycle = Lifecycle(name)
@@ -180,6 +186,7 @@ class PeriodicTrigger:
             worker,
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
+            error_classifier=error_classifier,
             name=name,
         )
         self._loop = PollingLoop(
@@ -187,6 +194,7 @@ class PeriodicTrigger:
             lifecycle=self._lifecycle,
             interval=interval,
             jitter=0,
+            error_classifier=error_classifier,
             name=name,
         )
         self._name = name
