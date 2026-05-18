@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import time
 from typing import Awaitable, Callable
 
 from .lifecycle import Lifecycle
-from .protocols import AllTransient, ErrorClassifier, ErrorKind
+from .protocols import AllTransient, ErrorClassifier, ErrorKind, NoOpMetrics, TriggerMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class PollingLoop:
         jitter: float = 0.2,
         max_silent_failures: int = 3,
         error_classifier: ErrorClassifier | None = None,
+        metrics: TriggerMetrics | None = None,
         name: str = "",
     ) -> None:
         self._callback = callback
@@ -35,11 +37,14 @@ class PollingLoop:
         self._jitter = jitter
         self._max_silent_failures = max_silent_failures
         self._classifier = error_classifier or AllTransient()
+        self._metrics = metrics or NoOpMetrics()
         self._name = name
         self._consecutive_failures = 0
         self._work_finished = asyncio.Event()
         self._work_finished.set()
         self._task: asyncio.Task[None] | None = None
+        self._last_completed_at: float | None = None
+        self._grace_period = 2 * interval
         self._logger = logging.getLogger(f"polling.{name}" if name else __name__)
 
     def start(self) -> asyncio.Task[None]:
@@ -47,7 +52,11 @@ class PollingLoop:
         return self._task
 
     def is_healthy(self) -> bool:
-        return self._task is not None and not self._task.done()
+        if self._task is None or self._task.done():
+            return False
+        if self._last_completed_at is None:
+            return True  # hasn't had a chance to complete yet
+        return (time.monotonic() - self._last_completed_at) < self._grace_period
 
     async def wait_for_work_finished(self) -> None:
         await self._work_finished.wait()
@@ -60,9 +69,13 @@ class PollingLoop:
                     break
 
                 self._work_finished.clear()
+                t0 = time.monotonic()
                 try:
                     has_more = await self._callback()
                     self._consecutive_failures = 0
+                    elapsed = time.monotonic() - t0
+                    self._metrics.record_iteration(elapsed)
+                    self._last_completed_at = time.monotonic()
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:

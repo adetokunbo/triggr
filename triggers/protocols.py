@@ -50,3 +50,26 @@ class ReadyTaskLister(Protocol[T_co]):
     """User-provided logic for listing time-ready tasks."""
 
     async def list_ready_tasks(self, now: float, limit: int) -> list[T_co]: ...
+
+
+class TriggerMetrics(Protocol):
+    """Records metrics for trigger components."""
+
+    def record_iteration(self, duration: float) -> None: ...
+
+    def record_task_outcome(self, outcome: TaskOutcome, duration: float) -> None: ...
+
+    def record_task_error(self, error: Exception) -> None: ...
+
+
+class NoOpMetrics:
+    """Default metrics — discards everything."""
+
+    def record_iteration(self, duration: float) -> None:
+        pass
+
+    def record_task_outcome(self, outcome: TaskOutcome, duration: float) -> None:
+        pass
+
+    def record_task_error(self, error: Exception) -> None:
+        pass

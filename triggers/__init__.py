@@ -8,9 +8,11 @@ from .protocols import (
     ErrorClassifier,
     ErrorKind,
     HasHealth,
+    NoOpMetrics,
     ReadyTaskLister,
     TaskSource,
     TaskWorker,
+    TriggerMetrics,
 )
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledTaskSource
@@ -26,6 +28,8 @@ __all__ = [
     "ErrorClassifier",
     "ErrorKind",
     "HasHealth",
+    "NoOpMetrics",
+    "TriggerMetrics",
     "ReadyTaskLister",
     "TaskSource",
     "TaskWorker",

@@ -11,7 +11,7 @@ from .lifecycle import Lifecycle
 from .outcome import TaskOutcome
 from .polling_loop import PollingLoop
 from .processor import TaskProcessor
-from .protocols import ErrorClassifier, HasHealth, TaskSource, TaskWorker
+from .protocols import ErrorClassifier, HasHealth, TaskSource, TaskWorker, TriggerMetrics
 from .retry import AUTOMATION, RetryPolicy
 
 T = TypeVar("T")
@@ -23,7 +23,6 @@ class PollingTaskTrigger(Generic[T]):
     """Poll for tasks, process them in parallel with retry.
 
     Composed from PollingLoop + TaskProcessor + TaskSource.
-    Replaces the inheritance-based PollingParallelTaskExecutionTrigger.
     """
 
     def __init__(
@@ -33,6 +32,7 @@ class PollingTaskTrigger(Generic[T]):
         config: AutomationConfig,
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
+        metrics: TriggerMetrics | None = None,
         name: str = "",
     ) -> None:
         self._source = source
@@ -42,6 +42,7 @@ class PollingTaskTrigger(Generic[T]):
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
             error_classifier=error_classifier,
+            metrics=metrics,
             name=name,
         )
         self._loop = PollingLoop(
@@ -51,6 +52,7 @@ class PollingTaskTrigger(Generic[T]):
             jitter=config.polling_jitter,
             max_silent_failures=config.max_num_silent_polling_retries,
             error_classifier=error_classifier,
+            metrics=metrics,
             name=name,
         )
         self._parallelism = config.parallelism
@@ -102,7 +104,6 @@ class StreamTaskTrigger(Generic[T]):
     """Process tasks from an async iterator with retry.
 
     Composed from TaskProcessor + async iterator.
-    Replaces the inheritance-based SourceBasedTrigger.
     """
 
     def __init__(
@@ -111,6 +112,8 @@ class StreamTaskTrigger(Generic[T]):
         worker: TaskWorker[T],
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
+        metrics: TriggerMetrics | None = None,
+        grace_period: float = 60.0,
         name: str = "",
     ) -> None:
         self._source = source
@@ -120,9 +123,12 @@ class StreamTaskTrigger(Generic[T]):
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
             error_classifier=error_classifier,
+            metrics=metrics,
             name=name,
         )
         self._task: asyncio.Task[None] | None = None
+        self._last_completed_at: float | None = None
+        self._grace_period = grace_period
         self._name = name
 
     def run(self, paused: bool = False) -> asyncio.Task[None]:
@@ -140,6 +146,7 @@ class StreamTaskTrigger(Generic[T]):
                 if self._lifecycle.is_closed:
                     break
                 await self._processor.process(task)
+                self._last_completed_at = time.monotonic()
         except asyncio.CancelledError:
             pass
 
@@ -155,7 +162,11 @@ class StreamTaskTrigger(Generic[T]):
             self._task.cancel()
 
     def is_healthy(self) -> bool:
-        return self._task is not None and not self._task.done()
+        if self._task is None or self._task.done():
+            return False
+        if self._last_completed_at is None:
+            return True  # hasn't had a chance to complete yet
+        return (time.monotonic() - self._last_completed_at) < self._grace_period
 
 
 @dataclass
@@ -170,7 +181,6 @@ class PeriodicTrigger:
     """Run a task on a fixed interval. The task is never stale.
 
     Composed from PollingLoop + TaskProcessor.
-    Replaces the inheritance-based PeriodicTaskTrigger.
     """
 
     def __init__(
@@ -179,6 +189,7 @@ class PeriodicTrigger:
         interval: float,
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
+        metrics: TriggerMetrics | None = None,
         name: str = "",
     ) -> None:
         self._lifecycle = Lifecycle(name)
@@ -187,6 +198,7 @@ class PeriodicTrigger:
             retry_policy,
             ready_gate=self._lifecycle.wait_for_not_paused,
             error_classifier=error_classifier,
+            metrics=metrics,
             name=name,
         )
         self._loop = PollingLoop(
@@ -195,6 +207,7 @@ class PeriodicTrigger:
             interval=interval,
             jitter=0,
             error_classifier=error_classifier,
+            metrics=metrics,
             name=name,
         )
         self._name = name

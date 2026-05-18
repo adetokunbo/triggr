@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Awaitable, Callable, Generic, TypeVar
 
 from .outcome import TaskOutcome
-from .protocols import AllTransient, ErrorClassifier, ErrorKind, TaskWorker
+from .protocols import (
+    AllTransient,
+    ErrorClassifier,
+    ErrorKind,
+    NoOpMetrics,
+    TaskWorker,
+    TriggerMetrics,
+)
 from .retry import AUTOMATION, RetryPolicy, RetriesExhausted, retry
 
 T = TypeVar("T")
@@ -25,12 +33,14 @@ class TaskProcessor(Generic[T]):
         retry_policy: RetryPolicy = AUTOMATION,
         ready_gate: Callable[[], Awaitable[None]] | None = None,
         error_classifier: ErrorClassifier | None = None,
+        metrics: TriggerMetrics | None = None,
         name: str = "",
     ) -> None:
         self._worker = worker
         self._retry_policy = retry_policy
         self._ready_gate = ready_gate
         self._classifier = error_classifier or AllTransient()
+        self._metrics = metrics or NoOpMetrics()
         self._logger = logging.getLogger(f"processor.{name}" if name else __name__)
 
     async def process(self, task: T) -> bool:
@@ -38,6 +48,7 @@ class TaskProcessor(Generic[T]):
 
         Returns True if the task succeeded or was stale.
         """
+        t0 = time.monotonic()
         try:
             outcome = await retry(
                 self._retry_policy,
@@ -47,8 +58,14 @@ class TaskProcessor(Generic[T]):
                 between_attempts=self._ready_gate,
             )
         except RetriesExhausted as e:
+            elapsed = time.monotonic() - t0
+            self._metrics.record_task_error(e.last_error)
+            self._metrics.record_task_outcome(TaskOutcome.FAILED, elapsed)
             self._logger.error("Task %s failed after retries: %s", task, e.last_error)
             return False
+
+        elapsed = time.monotonic() - t0
+        self._metrics.record_task_outcome(outcome, elapsed)
 
         if outcome == TaskOutcome.SUCCESS:
             self._logger.info("Task %s completed", task)
@@ -67,7 +84,8 @@ class TaskProcessor(Generic[T]):
             await self._ready_gate()
         try:
             return await self._worker.complete_task(task)
-        except Exception:
+        except Exception as e:
+            self._metrics.record_task_error(e)
             if await self._worker.is_stale_task(task):
                 return TaskOutcome.STALE
             raise
