@@ -52,6 +52,20 @@ class ReadyTaskLister(Protocol[T_co]):
     async def list_ready_tasks(self, now: float, limit: int) -> list[T_co]: ...
 
 
+class Trigger(Protocol):
+    """Common interface for all trigger types."""
+
+    def run(self, paused: bool = False) -> None: ...
+
+    def pause(self) -> None: ...
+
+    def resume(self) -> None: ...
+
+    def close(self) -> None: ...
+
+    def is_healthy(self) -> bool: ...
+
+
 class TriggerMetrics(Protocol):
     """Records metrics for trigger components."""
 

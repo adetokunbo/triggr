@@ -16,6 +16,7 @@ from .protocols import (
 )
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledTaskSource
+from .service import AutomationService
 from .triggers import PeriodicTask, PeriodicTrigger, PollingTaskTrigger, StreamTaskTrigger
 
 __all__ = [
@@ -41,5 +42,6 @@ __all__ = [
     "PeriodicTask",
     "PeriodicTrigger",
     "PollingTaskTrigger",
+    "AutomationService",
     "StreamTaskTrigger",
 ]
