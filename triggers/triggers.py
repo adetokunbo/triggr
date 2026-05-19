@@ -104,6 +104,7 @@ class StreamTaskTrigger(Generic[T]):
     """Process tasks from an async iterator with retry.
 
     Composed from TaskProcessor + async iterator.
+    Supports bounded concurrency via the `parallelism` parameter.
     """
 
     def __init__(
@@ -114,6 +115,7 @@ class StreamTaskTrigger(Generic[T]):
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
         grace_period: float = 60.0,
+        parallelism: int = 1,
         name: str = "",
     ) -> None:
         self._source = source
@@ -129,6 +131,7 @@ class StreamTaskTrigger(Generic[T]):
         self._task: asyncio.Task[None] | None = None
         self._last_completed_at: float | None = None
         self._grace_period = grace_period
+        self._parallelism = parallelism
         self._name = name
 
     def run(self, paused: bool = False) -> asyncio.Task[None]:
@@ -138,6 +141,12 @@ class StreamTaskTrigger(Generic[T]):
         return self._task
 
     async def _run(self) -> None:
+        if self._parallelism <= 1:
+            await self._run_sequential()
+        else:
+            await self._run_concurrent()
+
+    async def _run_sequential(self) -> None:
         try:
             async for task in self._source:
                 if self._lifecycle.is_closed:
@@ -149,6 +158,35 @@ class StreamTaskTrigger(Generic[T]):
                 self._last_completed_at = time.monotonic()
         except asyncio.CancelledError:
             pass
+
+    async def _run_concurrent(self) -> None:
+        sem = asyncio.Semaphore(self._parallelism)
+        pending: set[asyncio.Task[None]] = set()
+        try:
+            async for task in self._source:
+                if self._lifecycle.is_closed:
+                    break
+                await self._lifecycle.wait_for_not_paused()
+                if self._lifecycle.is_closed:
+                    break
+                await sem.acquire()
+                t = asyncio.create_task(self._process_and_release(sem, task))
+                pending.add(t)
+                t.add_done_callback(pending.discard)
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+        except asyncio.CancelledError:
+            for t in pending:
+                t.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+
+    async def _process_and_release(self, sem: asyncio.Semaphore, task: T) -> None:
+        try:
+            await self._processor.process(task)
+            self._last_completed_at = time.monotonic()
+        finally:
+            sem.release()
 
     def pause(self) -> None:
         self._lifecycle.pause()
