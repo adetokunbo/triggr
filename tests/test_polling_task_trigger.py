@@ -98,6 +98,37 @@ class TestPollingTaskTrigger:
         assert set(worker.completed) == set(tasks)
 
     @pytest.mark.asyncio
+    async def test_sliding_window_fills_slot_immediately(self):
+        """A free parallelism slot is filled as soon as any task finishes, not after a full batch."""
+        config = AutomationConfig(polling_interval=0.01, polling_jitter=0, parallelism=2)
+        loop = asyncio.get_event_loop()
+        t0 = loop.time()
+        marker_started_at: list[float] = []
+
+        class Worker:
+            async def complete_task(self, task: str) -> TaskOutcome:
+                if task == "slow":
+                    await asyncio.sleep(0.15)
+                elif task == "fast":
+                    await asyncio.sleep(0.01)
+                else:
+                    marker_started_at.append(loop.time() - t0)
+                return TaskOutcome.SUCCESS
+
+            async def is_stale_task(self, task: str) -> bool:
+                return False
+
+        # slow+fast start together; fast finishes at ~0.01s and frees a slot;
+        # marker fills it immediately rather than waiting for slow (~0.15s).
+        source = FixedSource(["slow", "fast", "marker"], once=True)
+        trigger = PollingTaskTrigger(source, Worker(), config)
+        trigger.pause()
+        await trigger.run_once()
+
+        assert len(marker_started_at) == 1
+        assert marker_started_at[0] < 0.1  # started well before slow would finish
+
+    @pytest.mark.asyncio
     async def test_is_healthy_while_running(self, config):
         source = FixedSource(["x"])
         worker = RecordingWorker[str]()

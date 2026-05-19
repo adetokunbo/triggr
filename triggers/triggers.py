@@ -88,14 +88,13 @@ class PollingTaskTrigger(Generic[T]):
         if not tasks:
             return False
 
-        results: list[bool] = []
-        for i in range(0, len(tasks), self._parallelism):
-            batch = tasks[i : i + self._parallelism]
-            batch_results = await asyncio.gather(
-                *(self._processor.process(t) for t in batch)
-            )
-            results.extend(batch_results)
+        sem = asyncio.Semaphore(self._parallelism)
 
+        async def run_with_sem(t: T) -> bool:
+            async with sem:
+                return await self._processor.process(t)
+
+        results = await asyncio.gather(*(run_with_sem(t) for t in tasks))
         return any(results)
 
     def pause(self) -> None:
