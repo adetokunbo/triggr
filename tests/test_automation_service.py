@@ -204,6 +204,21 @@ class TestExpectedValidation:
         assert "not registered" not in caplog.text
         assert "Unexpected" not in caplog.text
 
+    def test_raises_on_missing_when_strict(self):
+        svc = AutomationService(expected={"a", "b"}, strict=True)
+        svc.register("a", FakeTrigger())
+
+        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
+            svc.start_all()
+
+    def test_raises_on_unexpected_when_strict(self):
+        svc = AutomationService(expected={"a"}, strict=True)
+        svc.register("a", FakeTrigger())
+        svc.register("extra", FakeTrigger())
+
+        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
+            svc.start_all()
+
     def test_no_validation_without_expected(self, caplog):
         svc = AutomationService()
         svc.register("anything", FakeTrigger())
