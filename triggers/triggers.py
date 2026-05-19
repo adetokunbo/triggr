@@ -4,19 +4,37 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from typing import AsyncIterator, Generic, TypeVar
+from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 
 from .config import AutomationConfig
+from .gates import compose_gates
 from .lifecycle import Lifecycle
 from .outcome import TaskOutcome
 from .polling_loop import PollingLoop
 from .processor import TaskProcessor
-from .protocols import ErrorClassifier, HasHealth, TaskSource, TaskWorker, TriggerMetrics
+from .protocols import (
+    ErrorClassifier,
+    HasHealth,
+    ReadinessGate,
+    TaskSource,
+    TaskWorker,
+    TriggerMetrics,
+)
 from .retry import AUTOMATION, RetryPolicy
 
 T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
+
+
+def _make_gate(
+    lifecycle: Lifecycle,
+    ready_gate: ReadinessGate | None,
+) -> Callable[[], Awaitable[None]]:
+    """Combine lifecycle pause gate with an optional application readiness gate."""
+    if ready_gate is None:
+        return lifecycle.wait_for_not_paused
+    return compose_gates(lifecycle.wait_for_not_paused, ready_gate.wait_until_ready)
 
 
 class PollingTaskTrigger(Generic[T]):
@@ -33,14 +51,16 @@ class PollingTaskTrigger(Generic[T]):
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
+        ready_gate: ReadinessGate | None = None,
         name: str = "",
     ) -> None:
         self._source = source
         self._lifecycle = Lifecycle(name)
+        gate = _make_gate(self._lifecycle, ready_gate)
         self._processor = TaskProcessor(
             worker,
             retry_policy,
-            ready_gate=self._lifecycle.wait_for_not_paused,
+            ready_gate=gate,
             error_classifier=error_classifier,
             metrics=metrics,
             name=name,
@@ -116,14 +136,16 @@ class StreamTaskTrigger(Generic[T]):
         metrics: TriggerMetrics | None = None,
         grace_period: float = 60.0,
         parallelism: int = 1,
+        ready_gate: ReadinessGate | None = None,
         name: str = "",
     ) -> None:
         self._source = source
         self._lifecycle = Lifecycle(name)
+        self._gate = _make_gate(self._lifecycle, ready_gate)
         self._processor = TaskProcessor(
             worker,
             retry_policy,
-            ready_gate=self._lifecycle.wait_for_not_paused,
+            ready_gate=self._gate,
             error_classifier=error_classifier,
             metrics=metrics,
             name=name,
@@ -151,7 +173,7 @@ class StreamTaskTrigger(Generic[T]):
             async for task in self._source:
                 if self._lifecycle.is_closed:
                     break
-                await self._lifecycle.wait_for_not_paused()
+                await self._gate()
                 if self._lifecycle.is_closed:
                     break
                 await self._processor.process(task)
@@ -166,7 +188,7 @@ class StreamTaskTrigger(Generic[T]):
             async for task in self._source:
                 if self._lifecycle.is_closed:
                     break
-                await self._lifecycle.wait_for_not_paused()
+                await self._gate()
                 if self._lifecycle.is_closed:
                     break
                 await sem.acquire()
@@ -228,13 +250,15 @@ class PeriodicTrigger:
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
+        ready_gate: ReadinessGate | None = None,
         name: str = "",
     ) -> None:
         self._lifecycle = Lifecycle(name)
+        gate = _make_gate(self._lifecycle, ready_gate)
         self._processor = TaskProcessor(
             worker,
             retry_policy,
-            ready_gate=self._lifecycle.wait_for_not_paused,
+            ready_gate=gate,
             error_classifier=error_classifier,
             metrics=metrics,
             name=name,

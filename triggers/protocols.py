@@ -66,6 +66,12 @@ class Trigger(Protocol):
     def is_healthy(self) -> bool: ...
 
 
+class ReadinessGate(Protocol):
+    """A condition that must be met before work can proceed."""
+
+    async def wait_until_ready(self) -> None: ...
+
+
 class TriggerMetrics(Protocol):
     """Records metrics for trigger components."""
 

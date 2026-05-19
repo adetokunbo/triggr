@@ -9,11 +9,13 @@ from .protocols import (
     ErrorKind,
     HasHealth,
     NoOpMetrics,
+    ReadinessGate,
     ReadyTaskLister,
     TaskSource,
     TaskWorker,
     TriggerMetrics,
 )
+from .gates import CompositeGate, EventGate, compose_gates
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledTaskSource
 from .service import AutomationService
@@ -28,7 +30,11 @@ __all__ = [
     "AllTransient",
     "ErrorClassifier",
     "ErrorKind",
+    "CompositeGate",
+    "EventGate",
+    "compose_gates",
     "HasHealth",
+    "ReadinessGate",
     "NoOpMetrics",
     "TriggerMetrics",
     "ReadyTaskLister",
