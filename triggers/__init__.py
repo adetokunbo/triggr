@@ -8,6 +8,7 @@ from .protocols import (
     ErrorClassifier,
     ErrorKind,
     HasHealth,
+    ManagedService,
     NoOpMetrics,
     ReadinessGate,
     ReadyTaskLister,
@@ -18,6 +19,7 @@ from .protocols import (
 from .gates import CompositeGate, EventGate, compose_gates
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledTaskSource
+from .retrying_service import RetryingService
 from .service import AutomationService
 from .triggers import PeriodicTask, PeriodicTrigger, PollingTaskTrigger, StreamTaskTrigger
 
@@ -48,6 +50,8 @@ __all__ = [
     "PeriodicTask",
     "PeriodicTrigger",
     "PollingTaskTrigger",
+    "ManagedService",
+    "RetryingService",
     "AutomationService",
     "StreamTaskTrigger",
 ]

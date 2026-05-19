@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from enum import Enum, auto
 from typing import AsyncIterator, Generic, Protocol, TypeVar, runtime_checkable
 
@@ -64,6 +65,16 @@ class Trigger(Protocol):
     def close(self) -> None: ...
 
     def is_healthy(self) -> bool: ...
+
+
+class ManagedService(Protocol):
+    """A long-running service that can be started, monitored, and closed."""
+
+    async def start(self) -> asyncio.Task[None]: ...
+
+    def close(self) -> None: ...
+
+    def is_active(self) -> bool: ...
 
 
 class ReadinessGate(Protocol):
