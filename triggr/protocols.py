@@ -52,13 +52,13 @@ class Worker(Protocol[T]):
 class Source(Protocol[T_co]):
     """User-provided logic for retrieving tasks to process."""
 
-    async def retrieve_tasks(self) -> list[T_co]: ...
+    async def retrieve(self) -> list[T_co]: ...
 
 
 class ReadyLister(Protocol[T_co]):
     """User-provided logic for listing time-ready tasks."""
 
-    async def list_ready_tasks(self, now: float, limit: int) -> list[T_co]: ...
+    async def list_ready(self, now: float, limit: int) -> list[T_co]: ...
 
 
 class Trigger(Protocol):

@@ -10,7 +10,7 @@ class FixedLister:
         self._items = items
         self.call_count = 0
 
-    async def list_ready_tasks(self, now: float, limit: int) -> list[str]:
+    async def list_ready(self, now: float, limit: int) -> list[str]:
         self.call_count += 1
         return self._items[:limit]
 
@@ -21,7 +21,7 @@ class TestScheduledSource:
         lister = FixedLister(["a", "b", "c"])
         source = ScheduledSource(lister, parallelism=10)
 
-        tasks = await source.retrieve_tasks()
+        tasks = await source.retrieve()
 
         assert len(tasks) == 3
         assert all(isinstance(t, ReadyTask) for t in tasks)
@@ -33,7 +33,7 @@ class TestScheduledSource:
         lister = FixedLister(["a", "b", "c", "d", "e"])
         source = ScheduledSource(lister, parallelism=2)
 
-        tasks = await source.retrieve_tasks()
+        tasks = await source.retrieve()
 
         assert len(tasks) == 2
         assert [t.work for t in tasks] == ["a", "b"]
@@ -43,7 +43,7 @@ class TestScheduledSource:
         lister = FixedLister([])
         source = ScheduledSource(lister, parallelism=10)
 
-        tasks = await source.retrieve_tasks()
+        tasks = await source.retrieve()
 
         assert tasks == []
         assert lister.call_count == 1

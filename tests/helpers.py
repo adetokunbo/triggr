@@ -45,7 +45,7 @@ class FixedSource(Generic[T]):
         self._returned = False
         self.call_count = 0
 
-    async def retrieve_tasks(self) -> list[T]:
+    async def retrieve(self) -> list[T]:
         self.call_count += 1
         if self._once and self._returned:
             return []

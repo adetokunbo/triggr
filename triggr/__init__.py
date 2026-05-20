@@ -9,7 +9,7 @@ Typical usage::
     from triggr import PollingTrigger, TriggerConfig, Outcome
 
     class MySource:
-        async def retrieve_tasks(self) -> list[str]:
+        async def retrieve(self) -> list[str]:
             return ["work-item"]
 
     class MyWorker:

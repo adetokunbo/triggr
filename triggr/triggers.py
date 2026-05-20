@@ -96,7 +96,7 @@ class PollingTrigger(Generic[T]):
         return self._loop.start()
 
     async def _poll_once(self) -> bool:
-        tasks = await self._source.retrieve_tasks()
+        tasks = await self._source.retrieve()
         if not tasks:
             return False
 

@@ -36,7 +36,7 @@ class ScheduledSource(Generic[T]):
         self._lister = lister
         self._parallelism = parallelism
 
-    async def retrieve_tasks(self) -> list[ReadyTask[T]]:
+    async def retrieve(self) -> list[ReadyTask[T]]:
         now = time.time()
-        items = await self._lister.list_ready_tasks(now, self._parallelism)
+        items = await self._lister.list_ready(now, self._parallelism)
         return [ReadyTask(ready_at=now, work=item) for item in items]
