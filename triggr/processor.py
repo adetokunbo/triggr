@@ -20,7 +20,7 @@ from .protocols import (
     Worker,
     TriggerMetrics,
 )
-from .retry import AUTOMATION, RetryPolicy, RetriesExhausted, retry
+from .retry import DEFAULT, RetryPolicy, RetriesExhausted, retry
 
 T = TypeVar("T")
 
@@ -37,7 +37,7 @@ class Processor(Generic[T]):
     def __init__(
         self,
         worker: Worker[T],
-        retry_policy: RetryPolicy = AUTOMATION,
+        retry_policy: RetryPolicy = DEFAULT,
         ready_gate: Callable[[], Awaitable[None]] | None = None,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,

@@ -1,7 +1,7 @@
 """Retry policy and async retry helper with exponential backoff.
 
 Provides RetryPolicy (configurable backoff parameters), two pre-built
-policies (AUTOMATION, LONG_RUNNING), and the retry() coroutine used by
+policies (DEFAULT, LONG_RUNNING), and the retry() coroutine used by
 Processor and RetryingService.
 """
 
@@ -31,7 +31,7 @@ class RetryPolicy:
         return delay + jitter
 
 
-AUTOMATION = RetryPolicy(max_retries=35, initial_delay=0.2, max_delay=5.0)
+DEFAULT = RetryPolicy(max_retries=35, initial_delay=0.2, max_delay=5.0)
 LONG_RUNNING = RetryPolicy(
     max_retries=35, initial_delay=0.2, max_delay=5.0, reset_retries_after=60.0
 )

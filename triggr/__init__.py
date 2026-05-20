@@ -44,7 +44,7 @@ from .protocols import (
     TriggerMetrics,
 )
 from .gates import CompositeGate, EventGate, compose_gates
-from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
+from .retry import DEFAULT, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledSource
 from .retrying_service import RetryingService
 from .trigger_service import TriggerService
@@ -70,7 +70,7 @@ __all__ = [
     "Source",
     "Worker",
     "RetryPolicy",
-    "AUTOMATION",
+    "DEFAULT",
     "LONG_RUNNING",
     "ReadyTask",
     "ScheduledSource",

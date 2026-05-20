@@ -32,7 +32,7 @@ from .protocols import (
     Worker,
     TriggerMetrics,
 )
-from .retry import AUTOMATION, RetryPolicy
+from .retry import DEFAULT, RetryPolicy
 
 T = TypeVar("T")
 
@@ -60,7 +60,7 @@ class PollingTrigger(Generic[T]):
         source: Source[T],
         worker: Worker[T],
         config: TriggerConfig,
-        retry_policy: RetryPolicy = AUTOMATION,
+        retry_policy: RetryPolicy = DEFAULT,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
         ready_gate: ReadinessGate | None = None,
@@ -142,7 +142,7 @@ class StreamTrigger(Generic[T]):
         self,
         source: AsyncIterator[T],
         worker: Worker[T],
-        retry_policy: RetryPolicy = AUTOMATION,
+        retry_policy: RetryPolicy = DEFAULT,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
         grace_period: float = 60.0,
@@ -258,7 +258,7 @@ class PeriodicTrigger:
         self,
         worker: Worker[PeriodicTask],
         interval: float,
-        retry_policy: RetryPolicy = AUTOMATION,
+        retry_policy: RetryPolicy = DEFAULT,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
         ready_gate: ReadinessGate | None = None,
