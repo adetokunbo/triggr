@@ -3,7 +3,7 @@
 Defines the interfaces callers implement to plug work into the framework:
 Source, Worker, ReadyLister, ReadinessGate, ErrorClassifier,
 TriggerMetrics, and ManagedService. Also provides NoOpMetrics and
-AllTransient as zero-effort defaults.
+TransientErrors as zero-effort defaults.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ class ErrorClassifier(Protocol):
     def classify(self, error: Exception) -> ErrorKind: ...
 
 
-class AllTransient:
+class TransientErrors:
     """Default classifier — all errors are transient."""
 
     def classify(self, error: Exception) -> ErrorKind:

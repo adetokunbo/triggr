@@ -4,7 +4,7 @@ import asyncio
 import pytest
 
 from triggr import (
-    AllTransient,
+    TransientErrors,
     ErrorKind,
     Lifecycle,
     PollingLoop,
@@ -72,7 +72,7 @@ class TestErrorClassificationInProcessor:
 
     @pytest.mark.asyncio
     async def test_all_transient_classifier(self):
-        classifier = AllTransient()
+        classifier = TransientErrors()
         assert classifier.classify(ValueError("x")) == ErrorKind.TRANSIENT
         assert classifier.classify(RuntimeError("x")) == ErrorKind.TRANSIENT
         assert classifier.classify(Exception("x")) == ErrorKind.TRANSIENT

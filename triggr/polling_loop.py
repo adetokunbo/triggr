@@ -15,7 +15,7 @@ import time
 from typing import Awaitable, Callable
 
 from .lifecycle import Lifecycle
-from .protocols import AllTransient, ErrorClassifier, ErrorKind, NoOpMetrics, TriggerMetrics
+from .protocols import TransientErrors, ErrorClassifier, ErrorKind, NoOpMetrics, TriggerMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class PollingLoop:
         self._interval = interval
         self._jitter = jitter
         self._max_silent_failures = max_silent_failures
-        self._classifier = error_classifier or AllTransient()
+        self._classifier = error_classifier or TransientErrors()
         self._metrics = metrics or NoOpMetrics()
         self._name = name
         self._consecutive_failures = 0

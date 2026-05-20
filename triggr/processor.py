@@ -13,7 +13,7 @@ from typing import Awaitable, Callable, Generic, TypeVar
 
 from .outcome import Outcome
 from .protocols import (
-    AllTransient,
+    TransientErrors,
     ErrorClassifier,
     ErrorKind,
     NoOpMetrics,
@@ -46,7 +46,7 @@ class Processor(Generic[T]):
         self._worker = worker
         self._retry_policy = retry_policy
         self._ready_gate = ready_gate
-        self._classifier = error_classifier or AllTransient()
+        self._classifier = error_classifier or TransientErrors()
         self._metrics = metrics or NoOpMetrics()
         self._logger = logging.getLogger(f"processor.{name}" if name else __name__)
 

@@ -31,7 +31,7 @@ from .outcome import Outcome
 from .polling_loop import PollingLoop
 from .processor import Processor
 from .protocols import (
-    AllTransient,
+    TransientErrors,
     ErrorClassifier,
     ErrorKind,
     HasHealth,
@@ -56,7 +56,7 @@ __all__ = [
     "Outcome",
     "PollingLoop",
     "Processor",
-    "AllTransient",
+    "TransientErrors",
     "ErrorClassifier",
     "ErrorKind",
     "CompositeGate",
