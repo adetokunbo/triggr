@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass
 from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 
-from .config import AutomationConfig
+from .config import TriggerConfig
 from .gates import compose_gates
 from .lifecycle import Lifecycle
 from .outcome import Outcome
@@ -59,7 +59,7 @@ class PollingTrigger(Generic[T]):
         self,
         source: Source[T],
         worker: Worker[T],
-        config: AutomationConfig,
+        config: TriggerConfig,
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,

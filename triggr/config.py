@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AutomationConfig:
+class TriggerConfig:
     polling_interval: float = 30.0
     polling_jitter: float = 0.2
     parallelism: int = 4

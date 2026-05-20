@@ -6,7 +6,7 @@ no external runtime dependencies.
 
 Typical usage::
 
-    from triggr import PollingTrigger, AutomationConfig, Outcome
+    from triggr import PollingTrigger, TriggerConfig, Outcome
 
     class MySource:
         async def retrieve_tasks(self) -> list[str]:
@@ -20,12 +20,12 @@ Typical usage::
         async def is_stale(self, task: str) -> bool:
             return False
 
-    config = AutomationConfig(polling_interval=5.0)
+    config = TriggerConfig(polling_interval=5.0)
     trigger = PollingTrigger(MySource(), MyWorker(), config)
     trigger.run()
 """
 
-from .config import AutomationConfig
+from .config import TriggerConfig
 from .lifecycle import Lifecycle
 from .outcome import Outcome
 from .polling_loop import PollingLoop
@@ -47,11 +47,11 @@ from .gates import CompositeGate, EventGate, compose_gates
 from .retry import AUTOMATION, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledSource
 from .retrying_service import RetryingService
-from .service import AutomationService
+from .trigger_service import TriggerService
 from .triggers import PeriodicTask, PeriodicTrigger, PollingTrigger, StreamTrigger
 
 __all__ = [
-    "AutomationConfig",
+    "TriggerConfig",
     "Lifecycle",
     "Outcome",
     "PollingLoop",
@@ -79,6 +79,6 @@ __all__ = [
     "PollingTrigger",
     "ManagedService",
     "RetryingService",
-    "AutomationService",
+    "TriggerService",
     "StreamTrigger",
 ]

@@ -5,8 +5,8 @@ import logging
 import pytest
 
 from triggr import (
-    AutomationConfig,
-    AutomationService,
+    TriggerConfig,
+    TriggerService,
     PeriodicTask,
     PeriodicTrigger,
     PollingTrigger,
@@ -17,7 +17,7 @@ from .helpers import FixedSource, RecordingWorker
 
 @pytest.fixture
 def config():
-    return AutomationConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
+    return TriggerConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
 
 
 class FakeTrigger:
@@ -48,7 +48,7 @@ class FakeTrigger:
 
 class TestRegistration:
     def test_register_and_iterate(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -58,14 +58,14 @@ class TestRegistration:
         assert svc["a"] is t1
 
     def test_duplicate_name_raises(self):
-        svc = AutomationService()
+        svc = TriggerService()
         svc.register("a", FakeTrigger())
 
         with pytest.raises(ValueError, match="already registered"):
             svc.register("a", FakeTrigger())
 
     def test_register_after_start_raises(self):
-        svc = AutomationService()
+        svc = TriggerService()
         svc.register("a", FakeTrigger())
         svc.start_all()
 
@@ -75,7 +75,7 @@ class TestRegistration:
 
 class TestStartAll:
     def test_starts_all_triggers(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -86,7 +86,7 @@ class TestStartAll:
         assert t2.running
 
     def test_starts_paused(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t = FakeTrigger()
         svc.register("a", t)
 
@@ -98,7 +98,7 @@ class TestStartAll:
 
 class TestHealth:
     def test_healthy_when_all_healthy(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -107,7 +107,7 @@ class TestHealth:
         assert svc.is_healthy()
 
     def test_unhealthy_when_one_closed(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -118,7 +118,7 @@ class TestHealth:
         assert not svc.is_healthy()
 
     def test_trigger_health_by_name(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -132,7 +132,7 @@ class TestHealth:
 
 class TestPauseResume:
     def test_pause_all(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -144,7 +144,7 @@ class TestPauseResume:
         assert t2.paused
 
     def test_resume_all(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -159,7 +159,7 @@ class TestPauseResume:
 
 class TestCloseAll:
     def test_closes_all_triggers(self):
-        svc = AutomationService()
+        svc = TriggerService()
         t1, t2 = FakeTrigger(), FakeTrigger()
         svc.register("a", t1)
         svc.register("b", t2)
@@ -173,7 +173,7 @@ class TestCloseAll:
 
 class TestExpectedValidation:
     def test_warns_on_missing(self, caplog):
-        svc = AutomationService(expected={"a", "b", "c"})
+        svc = TriggerService(expected={"a", "b", "c"})
         svc.register("a", FakeTrigger())
 
         with caplog.at_level(logging.WARNING):
@@ -183,7 +183,7 @@ class TestExpectedValidation:
         assert "b" in caplog.text or "c" in caplog.text
 
     def test_warns_on_unexpected(self, caplog):
-        svc = AutomationService(expected={"a"})
+        svc = TriggerService(expected={"a"})
         svc.register("a", FakeTrigger())
         svc.register("extra", FakeTrigger())
 
@@ -194,7 +194,7 @@ class TestExpectedValidation:
         assert "extra" in caplog.text
 
     def test_no_warning_when_matched(self, caplog):
-        svc = AutomationService(expected={"a", "b"})
+        svc = TriggerService(expected={"a", "b"})
         svc.register("a", FakeTrigger())
         svc.register("b", FakeTrigger())
 
@@ -205,14 +205,14 @@ class TestExpectedValidation:
         assert "Unexpected" not in caplog.text
 
     def test_raises_on_missing_when_strict(self):
-        svc = AutomationService(expected={"a", "b"}, strict=True)
+        svc = TriggerService(expected={"a", "b"}, strict=True)
         svc.register("a", FakeTrigger())
 
         with pytest.raises(RuntimeError, match="Trigger set mismatch"):
             svc.start_all()
 
     def test_raises_on_unexpected_when_strict(self):
-        svc = AutomationService(expected={"a"}, strict=True)
+        svc = TriggerService(expected={"a"}, strict=True)
         svc.register("a", FakeTrigger())
         svc.register("extra", FakeTrigger())
 
@@ -220,7 +220,7 @@ class TestExpectedValidation:
             svc.start_all()
 
     def test_no_validation_without_expected(self, caplog):
-        svc = AutomationService()
+        svc = TriggerService()
         svc.register("anything", FakeTrigger())
 
         with caplog.at_level(logging.WARNING):
@@ -232,7 +232,7 @@ class TestExpectedValidation:
 class TestWithRealTriggers:
     @pytest.mark.asyncio
     async def test_manages_real_triggers(self, config):
-        svc = AutomationService(expected={"poller", "periodic"})
+        svc = TriggerService(expected={"poller", "periodic"})
 
         source = FixedSource(["task"])
         worker1 = RecordingWorker[str]()

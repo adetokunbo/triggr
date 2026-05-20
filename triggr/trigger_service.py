@@ -1,4 +1,4 @@
-"""AutomationService: registry and lifecycle manager for named triggers.
+"""TriggerService: registry and lifecycle manager for named triggers.
 
 Handles registration, startup (optionally paused), health aggregation,
 pause/resume, and shutdown of a collection of triggers. Optionally
@@ -15,7 +15,7 @@ from .protocols import Trigger
 logger = logging.getLogger(__name__)
 
 
-class AutomationService:
+class TriggerService:
     """Manages a collection of named triggers.
 
     Handles registration, startup, health aggregation, and shutdown.
