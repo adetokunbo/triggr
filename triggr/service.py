@@ -1,3 +1,10 @@
+"""AutomationService: registry and lifecycle manager for named triggers.
+
+Handles registration, startup (optionally paused), health aggregation,
+pause/resume, and shutdown of a collection of triggers. Optionally
+validates that a declared set of triggers is registered before starting.
+"""
+
 from __future__ import annotations
 
 import logging

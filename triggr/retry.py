@@ -1,3 +1,10 @@
+"""Retry policy and async retry helper with exponential backoff.
+
+Provides RetryPolicy (configurable backoff parameters), two pre-built
+policies (AUTOMATION, LONG_RUNNING), and the retry() coroutine used by
+Processor and RetryingService.
+"""
+
 from __future__ import annotations
 
 import asyncio

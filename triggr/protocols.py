@@ -1,10 +1,18 @@
+"""User-provided protocols and default implementations.
+
+Defines the interfaces callers implement to plug work into the framework:
+Source, Worker, ReadyLister, ReadinessGate, ErrorClassifier,
+TriggerMetrics, and ManagedService. Also provides NoOpMetrics and
+AllTransient as zero-effort defaults.
+"""
+
 from __future__ import annotations
 
 import asyncio
 from enum import Enum, auto
 from typing import AsyncIterator, Generic, Protocol, TypeVar, runtime_checkable
 
-from .outcome import TaskOutcome
+from .outcome import Outcome
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -33,21 +41,21 @@ class HasHealth(Protocol):
     def is_healthy(self) -> bool: ...
 
 
-class TaskWorker(Protocol[T]):
+class Worker(Protocol[T]):
     """User-provided logic for completing and staleness-checking tasks."""
 
-    async def complete_task(self, task: T) -> TaskOutcome: ...
+    async def complete_task(self, task: T) -> Outcome: ...
 
     async def is_stale_task(self, task: T) -> bool: ...
 
 
-class TaskSource(Protocol[T_co]):
+class Source(Protocol[T_co]):
     """User-provided logic for retrieving tasks to process."""
 
     async def retrieve_tasks(self) -> list[T_co]: ...
 
 
-class ReadyTaskLister(Protocol[T_co]):
+class ReadyLister(Protocol[T_co]):
     """User-provided logic for listing time-ready tasks."""
 
     async def list_ready_tasks(self, now: float, limit: int) -> list[T_co]: ...
@@ -88,7 +96,7 @@ class TriggerMetrics(Protocol):
 
     def record_iteration(self, duration: float) -> None: ...
 
-    def record_task_outcome(self, outcome: TaskOutcome, duration: float) -> None: ...
+    def record_task_outcome(self, outcome: Outcome, duration: float) -> None: ...
 
     def record_task_error(self, error: Exception) -> None: ...
 
@@ -99,7 +107,7 @@ class NoOpMetrics:
     def record_iteration(self, duration: float) -> None:
         pass
 
-    def record_task_outcome(self, outcome: TaskOutcome, duration: float) -> None:
+    def record_task_outcome(self, outcome: Outcome, duration: float) -> None:
         pass
 
     def record_task_error(self, error: Exception) -> None:

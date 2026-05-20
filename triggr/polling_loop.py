@@ -1,3 +1,11 @@
+"""Standalone async polling loop with interval, jitter, and health tracking.
+
+PollingLoop is not tied to triggers — it can drive any periodic async
+operation. It calls a callback on a configurable interval, loops
+immediately when the callback signals more work is available, tracks
+consecutive failures, and reports health based on last completion time.
+"""
+
 from __future__ import annotations
 
 import asyncio

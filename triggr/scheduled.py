@@ -1,10 +1,17 @@
+"""ScheduledSource: time-based task retrieval for PollingTrigger.
+
+Wraps a ReadyLister and exposes it as a Source. Use this to build
+triggers that process items whose scheduled time has passed — expiry
+archival, delayed jobs, time-windowed work.
+"""
+
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-from .protocols import ReadyTaskLister
+from .protocols import ReadyLister
 
 T = TypeVar("T")
 

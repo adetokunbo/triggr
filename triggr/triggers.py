@@ -1,3 +1,15 @@
+"""Composed trigger types: the primary public API for running async work.
+
+Each trigger assembles Lifecycle, PollingLoop, and Processor from
+standalone components rather than inheriting shared state:
+
+- PollingTrigger: polls for tasks, executes them with sliding-window
+  concurrency bounded by parallelism.
+- StreamTrigger: consumes an AsyncIterator, processes each item with
+  optional bounded concurrency via asyncio.Semaphore.
+- PeriodicTrigger: runs a fixed-interval task that is never stale.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -9,15 +21,15 @@ from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 from .config import AutomationConfig
 from .gates import compose_gates
 from .lifecycle import Lifecycle
-from .outcome import TaskOutcome
+from .outcome import Outcome
 from .polling_loop import PollingLoop
-from .processor import TaskProcessor
+from .processor import Processor
 from .protocols import (
     ErrorClassifier,
     HasHealth,
     ReadinessGate,
-    TaskSource,
-    TaskWorker,
+    Source,
+    Worker,
     TriggerMetrics,
 )
 from .retry import AUTOMATION, RetryPolicy
@@ -37,16 +49,16 @@ def _make_gate(
     return compose_gates(lifecycle.wait_for_not_paused, ready_gate.wait_until_ready)
 
 
-class PollingTaskTrigger(Generic[T]):
+class PollingTrigger(Generic[T]):
     """Poll for tasks, process them in parallel with retry.
 
-    Composed from PollingLoop + TaskProcessor + TaskSource.
+    Composed from PollingLoop + Processor + Source.
     """
 
     def __init__(
         self,
-        source: TaskSource[T],
-        worker: TaskWorker[T],
+        source: Source[T],
+        worker: Worker[T],
         config: AutomationConfig,
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
@@ -57,7 +69,7 @@ class PollingTaskTrigger(Generic[T]):
         self._source = source
         self._lifecycle = Lifecycle(name)
         gate = _make_gate(self._lifecycle, ready_gate)
-        self._processor = TaskProcessor(
+        self._processor = Processor(
             worker,
             retry_policy,
             ready_gate=gate,
@@ -119,17 +131,17 @@ class PollingTaskTrigger(Generic[T]):
             self._lifecycle.pause()
 
 
-class StreamTaskTrigger(Generic[T]):
+class StreamTrigger(Generic[T]):
     """Process tasks from an async iterator with retry.
 
-    Composed from TaskProcessor + async iterator.
+    Composed from Processor + async iterator.
     Supports bounded concurrency via the `parallelism` parameter.
     """
 
     def __init__(
         self,
         source: AsyncIterator[T],
-        worker: TaskWorker[T],
+        worker: Worker[T],
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,
@@ -141,7 +153,7 @@ class StreamTaskTrigger(Generic[T]):
         self._source = source
         self._lifecycle = Lifecycle(name)
         self._gate = _make_gate(self._lifecycle, ready_gate)
-        self._processor = TaskProcessor(
+        self._processor = Processor(
             worker,
             retry_policy,
             ready_gate=self._gate,
@@ -239,12 +251,12 @@ class PeriodicTask:
 class PeriodicTrigger:
     """Run a task on a fixed interval. The task is never stale.
 
-    Composed from PollingLoop + TaskProcessor.
+    Composed from PollingLoop + Processor.
     """
 
     def __init__(
         self,
-        worker: TaskWorker[PeriodicTask],
+        worker: Worker[PeriodicTask],
         interval: float,
         retry_policy: RetryPolicy = AUTOMATION,
         error_classifier: ErrorClassifier | None = None,
@@ -254,7 +266,7 @@ class PeriodicTrigger:
     ) -> None:
         self._lifecycle = Lifecycle(name)
         gate = _make_gate(self._lifecycle, ready_gate)
-        self._processor = TaskProcessor(
+        self._processor = Processor(
             worker,
             retry_policy,
             ready_gate=gate,

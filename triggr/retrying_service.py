@@ -1,3 +1,12 @@
+"""RetryingService: two-level retry for long-running async services.
+
+Keeps a ManagedService alive indefinitely. Inner level retries service
+instantiation with exponential backoff; if retries exhaust, the outer
+level waits restart_interval and tries again. Reuses PollingLoop for
+the outer loop and Lifecycle for pause/resume, so health and lifecycle
+management are consistent with triggers.
+"""
+
 from __future__ import annotations
 
 import asyncio

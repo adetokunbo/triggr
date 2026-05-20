@@ -1,16 +1,23 @@
+"""Processor: retry and staleness logic for a single task.
+
+Independently testable — does not depend on triggers, polling, or
+lifecycle management. Wraps a Worker with exponential backoff retry,
+staleness detection between attempts, error classification, and metrics.
+"""
+
 from __future__ import annotations
 
 import logging
 import time
 from typing import Awaitable, Callable, Generic, TypeVar
 
-from .outcome import TaskOutcome
+from .outcome import Outcome
 from .protocols import (
     AllTransient,
     ErrorClassifier,
     ErrorKind,
     NoOpMetrics,
-    TaskWorker,
+    Worker,
     TriggerMetrics,
 )
 from .retry import AUTOMATION, RetryPolicy, RetriesExhausted, retry
@@ -20,8 +27,8 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
-class TaskProcessor(Generic[T]):
-    """Wraps a TaskWorker with retry and staleness detection.
+class Processor(Generic[T]):
+    """Wraps a Worker with retry and staleness detection.
 
     Independently testable — does not depend on triggers, polling,
     or lifecycle management.
@@ -29,7 +36,7 @@ class TaskProcessor(Generic[T]):
 
     def __init__(
         self,
-        worker: TaskWorker[T],
+        worker: Worker[T],
         retry_policy: RetryPolicy = AUTOMATION,
         ready_gate: Callable[[], Awaitable[None]] | None = None,
         error_classifier: ErrorClassifier | None = None,
@@ -60,26 +67,26 @@ class TaskProcessor(Generic[T]):
         except RetriesExhausted as e:
             elapsed = time.monotonic() - t0
             self._metrics.record_task_error(e.last_error)
-            self._metrics.record_task_outcome(TaskOutcome.FAILED, elapsed)
+            self._metrics.record_task_outcome(Outcome.FAILED, elapsed)
             self._logger.error("Task %s failed after retries: %s", task, e.last_error)
             return False
 
         elapsed = time.monotonic() - t0
         self._metrics.record_task_outcome(outcome, elapsed)
 
-        if outcome == TaskOutcome.SUCCESS:
+        if outcome == Outcome.SUCCESS:
             self._logger.info("Task %s completed", task)
             return True
-        elif outcome == TaskOutcome.STALE:
+        elif outcome == Outcome.STALE:
             self._logger.debug("Task %s is stale", task)
             return True
-        elif outcome == TaskOutcome.FAILED:
+        elif outcome == Outcome.FAILED:
             self._logger.warning("Task %s failed", task)
             return False
         else:  # NOOP
             return False
 
-    async def _attempt(self, task: T) -> TaskOutcome:
+    async def _attempt(self, task: T) -> Outcome:
         if self._ready_gate is not None:
             await self._ready_gate()
         try:
@@ -87,7 +94,7 @@ class TaskProcessor(Generic[T]):
         except Exception as e:
             self._metrics.record_task_error(e)
             if await self._worker.is_stale_task(task):
-                return TaskOutcome.STALE
+                return Outcome.STALE
             raise
 
     def _is_retryable(self, exc: Exception) -> bool:

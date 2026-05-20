@@ -1,3 +1,9 @@
+"""Pause/resume/close state shared between a trigger and its components.
+
+Lifecycle is a standalone component — triggers create one instance and pass
+it to PollingLoop and Processor rather than inheriting shared state.
+"""
+
 from __future__ import annotations
 
 import asyncio

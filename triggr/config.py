@@ -1,3 +1,5 @@
+"""Configuration dataclasses for triggr components."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

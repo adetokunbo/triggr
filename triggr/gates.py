@@ -1,3 +1,10 @@
+"""Readiness gates: conditions that must be met before a trigger proceeds.
+
+EventGate wraps an asyncio.Event for simple on/off gating. CompositeGate
+AND-combines multiple ReadinessGate instances. compose_gates combines
+plain async callables without needing the full ReadinessGate protocol.
+"""
+
 from __future__ import annotations
 
 import asyncio
