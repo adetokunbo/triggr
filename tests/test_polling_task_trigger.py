@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import AutomationConfig, PollingTaskTrigger, TaskOutcome
+from triggr import AutomationConfig, PollingTaskTrigger, TaskOutcome
 from .helpers import FixedSource, RecordingWorker
 
 

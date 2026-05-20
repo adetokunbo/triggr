@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import Lifecycle, TaskProcessor, TaskOutcome, RetryPolicy
+from triggr import Lifecycle, TaskProcessor, TaskOutcome, RetryPolicy
 
 
 class FailThenSucceedWorker:

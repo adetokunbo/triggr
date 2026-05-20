@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import Lifecycle, PollingLoop
+from triggr import Lifecycle, PollingLoop
 
 
 class TestPollingLoop:

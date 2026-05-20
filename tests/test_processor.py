@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from triggers import TaskOutcome, TaskProcessor, RetryPolicy
+from triggr import TaskOutcome, TaskProcessor, RetryPolicy
 from .helpers import RecordingWorker
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import EventGate, Lifecycle, RetryingService, RetryPolicy
+from triggr import EventGate, Lifecycle, RetryingService, RetryPolicy
 
 
 class FakeService:

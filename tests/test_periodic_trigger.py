@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import PeriodicTask, PeriodicTrigger, TaskOutcome
+from triggr import PeriodicTask, PeriodicTrigger, TaskOutcome
 from .helpers import RecordingWorker
 
 

@@ -4,7 +4,7 @@ import asyncio
 import time
 import pytest
 
-from triggers import StreamTaskTrigger, TaskOutcome
+from triggr import StreamTaskTrigger, TaskOutcome
 from .helpers import RecordingWorker, async_iter
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggers import (
+from triggr import (
     AllTransient,
     ErrorKind,
     Lifecycle,

@@ -4,7 +4,7 @@ import asyncio
 import logging
 import pytest
 
-from triggers import (
+from triggr import (
     AutomationConfig,
     AutomationService,
     PeriodicTask,

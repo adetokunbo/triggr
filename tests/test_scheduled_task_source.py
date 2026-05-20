@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from triggers import ReadyTask, ScheduledTaskSource
+from triggr import ReadyTask, ScheduledTaskSource
 
 
 class FixedLister:
