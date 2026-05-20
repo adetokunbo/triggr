@@ -23,7 +23,7 @@ class RecordingWorker(Generic[T]):
         self.stale_checks: list[T] = []
         self.fail_next: Exception | None = None
 
-    async def complete_task(self, task: T) -> Outcome:
+    async def complete(self, task: T) -> Outcome:
         if self.fail_next is not None:
             exc = self.fail_next
             self.fail_next = None
@@ -31,7 +31,7 @@ class RecordingWorker(Generic[T]):
         self.completed.append(task)
         return self.outcome
 
-    async def is_stale_task(self, task: T) -> bool:
+    async def is_stale(self, task: T) -> bool:
         self.stale_checks.append(task)
         return self.stale
 

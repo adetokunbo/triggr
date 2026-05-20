@@ -1,4 +1,4 @@
-"""Task outcome enum returned by Worker.complete_task."""
+"""Task outcome enum returned by Worker.complete."""
 
 from __future__ import annotations
 

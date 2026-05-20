@@ -51,10 +51,10 @@ class TestProcessorMetrics:
         metrics = RecordingMetrics()
 
         class AlwaysFails:
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 raise ValueError("boom")
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.01)

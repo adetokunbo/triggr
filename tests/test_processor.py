@@ -70,10 +70,10 @@ class TestProcessor:
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.001)
 
         class AlwaysFails:
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 raise ValueError("permanent")
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         proc = Processor(AlwaysFails(), policy)

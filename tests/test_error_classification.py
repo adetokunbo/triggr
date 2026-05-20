@@ -28,11 +28,11 @@ class AlwaysFailsWorker:
         self._error = error
         self.attempts = 0
 
-    async def complete_task(self, task: str) -> Outcome:
+    async def complete(self, task: str) -> Outcome:
         self.attempts += 1
         raise self._error
 
-    async def is_stale_task(self, task: str) -> bool:
+    async def is_stale(self, task: str) -> bool:
         return False
 
 

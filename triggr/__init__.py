@@ -13,11 +13,11 @@ Typical usage::
             return ["work-item"]
 
     class MyWorker:
-        async def complete_task(self, task: str) -> Outcome:
+        async def complete(self, task: str) -> Outcome:
             print(f"processing {task}")
             return Outcome.SUCCESS
 
-        async def is_stale_task(self, task: str) -> bool:
+        async def is_stale(self, task: str) -> bool:
             return False
 
     config = AutomationConfig(polling_interval=5.0)

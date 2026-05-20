@@ -106,7 +106,7 @@ class TestPollingTrigger:
         marker_started_at: list[float] = []
 
         class Worker:
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 if task == "slow":
                     await asyncio.sleep(0.15)
                 elif task == "fast":
@@ -115,7 +115,7 @@ class TestPollingTrigger:
                     marker_started_at.append(loop.time() - t0)
                 return Outcome.SUCCESS
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         # slow+fast start together; fast finishes at ~0.01s and frees a slot;

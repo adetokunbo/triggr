@@ -108,12 +108,12 @@ class TestStreamConcurrency:
             def __init__(self) -> None:
                 self.completed: list[str] = []
 
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 await asyncio.sleep(0.05)
                 self.completed.append(task)
                 return Outcome.SUCCESS
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         items = ["a", "b", "c", "d", "e"]
@@ -139,7 +139,7 @@ class TestStreamConcurrency:
         lock = asyncio.Lock()
 
         class TrackingWorker:
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 nonlocal max_concurrent, current
                 async with lock:
                     current += 1
@@ -150,7 +150,7 @@ class TestStreamConcurrency:
                     current -= 1
                 return Outcome.SUCCESS
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         items = [f"t{i}" for i in range(8)]
@@ -169,12 +169,12 @@ class TestStreamConcurrency:
             def __init__(self) -> None:
                 self.started = 0
 
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 self.started += 1
                 await asyncio.sleep(10.0)
                 return Outcome.SUCCESS
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         async def infinite_stream():
@@ -201,13 +201,13 @@ class TestStreamConcurrency:
         order: list[str] = []
 
         class OrderTrackingWorker:
-            async def complete_task(self, task: str) -> Outcome:
+            async def complete(self, task: str) -> Outcome:
                 order.append(f"start-{task}")
                 await asyncio.sleep(0.01)
                 order.append(f"end-{task}")
                 return Outcome.SUCCESS
 
-            async def is_stale_task(self, task: str) -> bool:
+            async def is_stale(self, task: str) -> bool:
                 return False
 
         items = ["a", "b", "c"]

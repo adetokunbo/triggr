@@ -13,13 +13,13 @@ class FailThenSucceedWorker:
         self._fail_count = fail_count
         self._attempts = 0
 
-    async def complete_task(self, task: str) -> Outcome:
+    async def complete(self, task: str) -> Outcome:
         self._attempts += 1
         if self._attempts <= self._fail_count:
             raise ValueError(f"attempt {self._attempts}")
         return Outcome.SUCCESS
 
-    async def is_stale_task(self, task: str) -> bool:
+    async def is_stale(self, task: str) -> bool:
         return False
 
     @property

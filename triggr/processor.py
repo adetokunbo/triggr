@@ -90,10 +90,10 @@ class Processor(Generic[T]):
         if self._ready_gate is not None:
             await self._ready_gate()
         try:
-            return await self._worker.complete_task(task)
+            return await self._worker.complete(task)
         except Exception as e:
             self._metrics.record_task_error(e)
-            if await self._worker.is_stale_task(task):
+            if await self._worker.is_stale(task):
                 return Outcome.STALE
             raise
 
