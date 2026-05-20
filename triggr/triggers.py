@@ -82,7 +82,7 @@ class PollingTrigger(Generic[T]):
             lifecycle=self._lifecycle,
             interval=config.polling_interval,
             jitter=config.polling_jitter,
-            max_silent_failures=config.max_num_silent_polling_retries,
+            max_silent_failures=config.max_silent_failures,
             error_classifier=error_classifier,
             metrics=metrics,
             name=name,
