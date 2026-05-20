@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggr import PeriodicTask, PeriodicTrigger, TaskOutcome
+from triggr import PeriodicTask, PeriodicTrigger, Outcome
 from .helpers import RecordingWorker
 
 
@@ -81,7 +81,7 @@ class TestPeriodicTrigger:
 
     @pytest.mark.asyncio
     async def test_failure_does_not_stop_loop(self):
-        worker = RecordingWorker[PeriodicTask](outcome=TaskOutcome.FAILED)
+        worker = RecordingWorker[PeriodicTask](outcome=Outcome.FAILED)
         trigger = PeriodicTrigger(worker, interval=0.01, name="test")
 
         trigger.run()

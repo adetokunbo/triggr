@@ -4,17 +4,17 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Generic, TypeVar
 
-from triggr.outcome import TaskOutcome
+from triggr.outcome import Outcome
 
 T = TypeVar("T")
 
 
 class RecordingWorker(Generic[T]):
-    """TaskWorker that records calls and returns configurable outcomes."""
+    """Worker that records calls and returns configurable outcomes."""
 
     def __init__(
         self,
-        outcome: TaskOutcome = TaskOutcome.SUCCESS,
+        outcome: Outcome = Outcome.SUCCESS,
         stale: bool = False,
     ) -> None:
         self.outcome = outcome
@@ -23,7 +23,7 @@ class RecordingWorker(Generic[T]):
         self.stale_checks: list[T] = []
         self.fail_next: Exception | None = None
 
-    async def complete_task(self, task: T) -> TaskOutcome:
+    async def complete_task(self, task: T) -> Outcome:
         if self.fail_next is not None:
             exc = self.fail_next
             self.fail_next = None
@@ -37,7 +37,7 @@ class RecordingWorker(Generic[T]):
 
 
 class FixedSource(Generic[T]):
-    """TaskSource that returns a fixed list, optionally only once."""
+    """Source that returns a fixed list, optionally only once."""
 
     def __init__(self, tasks: list[T], once: bool = False) -> None:
         self._tasks = tasks

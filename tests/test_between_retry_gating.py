@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggr import Lifecycle, TaskProcessor, TaskOutcome, RetryPolicy
+from triggr import Lifecycle, Processor, Outcome, RetryPolicy
 
 
 class FailThenSucceedWorker:
@@ -13,11 +13,11 @@ class FailThenSucceedWorker:
         self._fail_count = fail_count
         self._attempts = 0
 
-    async def complete_task(self, task: str) -> TaskOutcome:
+    async def complete_task(self, task: str) -> Outcome:
         self._attempts += 1
         if self._attempts <= self._fail_count:
             raise ValueError(f"attempt {self._attempts}")
-        return TaskOutcome.SUCCESS
+        return Outcome.SUCCESS
 
     async def is_stale_task(self, task: str) -> bool:
         return False
@@ -37,7 +37,7 @@ class TestBetweenRetryGating:
 
         policy = RetryPolicy(max_retries=3, initial_delay=0.001, max_delay=0.01)
         worker = FailThenSucceedWorker(fail_count=2)
-        proc = TaskProcessor(worker, policy, ready_gate=gate)
+        proc = Processor(worker, policy, ready_gate=gate)
 
         result = await proc.process("task")
 
@@ -51,7 +51,7 @@ class TestBetweenRetryGating:
         lifecycle = Lifecycle()
         policy = RetryPolicy(max_retries=5, initial_delay=0.001, max_delay=0.01)
         worker = FailThenSucceedWorker(fail_count=1)
-        proc = TaskProcessor(worker, policy, ready_gate=lifecycle.wait_for_not_paused)
+        proc = Processor(worker, policy, ready_gate=lifecycle.wait_for_not_paused)
 
         async def pause_then_resume():
             await asyncio.sleep(0.01)
@@ -69,7 +69,7 @@ class TestBetweenRetryGating:
     async def test_no_gate_still_works(self):
         policy = RetryPolicy(max_retries=3, initial_delay=0.001, max_delay=0.01)
         worker = FailThenSucceedWorker(fail_count=1)
-        proc = TaskProcessor(worker, policy, ready_gate=None)
+        proc = Processor(worker, policy, ready_gate=None)
 
         result = await proc.process("task")
 

@@ -4,16 +4,16 @@ import asyncio
 import time
 import pytest
 
-from triggr import StreamTaskTrigger, TaskOutcome
+from triggr import StreamTrigger, Outcome
 from .helpers import RecordingWorker, async_iter
 
 
-class TestStreamTaskTrigger:
+class TestStreamTrigger:
     @pytest.mark.asyncio
     async def test_processes_all_items_from_stream(self):
         items = ["a", "b", "c"]
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(async_iter(items), worker, name="test")
+        trigger = StreamTrigger(async_iter(items), worker, name="test")
 
         task = trigger.run()
         await task
@@ -23,7 +23,7 @@ class TestStreamTaskTrigger:
     @pytest.mark.asyncio
     async def test_empty_stream_completes(self):
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(async_iter([]), worker, name="test")
+        trigger = StreamTrigger(async_iter([]), worker, name="test")
 
         task = trigger.run()
         await task
@@ -38,7 +38,7 @@ class TestStreamTaskTrigger:
                 await asyncio.sleep(0.01)
 
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(slow_stream(), worker, name="test")
+        trigger = StreamTrigger(slow_stream(), worker, name="test")
 
         trigger.run()
         await asyncio.sleep(0.02)
@@ -61,7 +61,7 @@ class TestStreamTaskTrigger:
                 await asyncio.sleep(0.01)
 
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(infinite_stream(), worker, name="test")
+        trigger = StreamTrigger(infinite_stream(), worker, name="test")
 
         trigger.run()
         await asyncio.sleep(0.05)
@@ -79,7 +79,7 @@ class TestStreamTaskTrigger:
             await asyncio.sleep(1.0)
 
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(slow_stream(), worker, name="test")
+        trigger = StreamTrigger(slow_stream(), worker, name="test")
 
         assert not trigger.is_healthy()
         trigger.run()
@@ -93,7 +93,7 @@ class TestStreamTaskTrigger:
         worker.fail_next = ValueError("transient")
         worker.stale = True  # staleness check returns True after failure
 
-        trigger = StreamTaskTrigger(async_iter(["task"]), worker, name="test")
+        trigger = StreamTrigger(async_iter(["task"]), worker, name="test")
         task = trigger.run()
         await task
 
@@ -108,17 +108,17 @@ class TestStreamConcurrency:
             def __init__(self) -> None:
                 self.completed: list[str] = []
 
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 await asyncio.sleep(0.05)
                 self.completed.append(task)
-                return TaskOutcome.SUCCESS
+                return Outcome.SUCCESS
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
 
         items = ["a", "b", "c", "d", "e"]
         worker = SlowWorker()
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             async_iter(items), worker, parallelism=3, name="test"
         )
 
@@ -139,7 +139,7 @@ class TestStreamConcurrency:
         lock = asyncio.Lock()
 
         class TrackingWorker:
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 nonlocal max_concurrent, current
                 async with lock:
                     current += 1
@@ -148,13 +148,13 @@ class TestStreamConcurrency:
                 await asyncio.sleep(0.03)
                 async with lock:
                     current -= 1
-                return TaskOutcome.SUCCESS
+                return Outcome.SUCCESS
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
 
         items = [f"t{i}" for i in range(8)]
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             async_iter(items), TrackingWorker(), parallelism=3, name="test"
         )
 
@@ -169,10 +169,10 @@ class TestStreamConcurrency:
             def __init__(self) -> None:
                 self.started = 0
 
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 self.started += 1
                 await asyncio.sleep(10.0)
-                return TaskOutcome.SUCCESS
+                return Outcome.SUCCESS
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
@@ -184,7 +184,7 @@ class TestStreamConcurrency:
                 i += 1
 
         worker = SlowWorker()
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             infinite_stream(), worker, parallelism=3, name="test"
         )
 
@@ -201,17 +201,17 @@ class TestStreamConcurrency:
         order: list[str] = []
 
         class OrderTrackingWorker:
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 order.append(f"start-{task}")
                 await asyncio.sleep(0.01)
                 order.append(f"end-{task}")
-                return TaskOutcome.SUCCESS
+                return Outcome.SUCCESS
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
 
         items = ["a", "b", "c"]
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             async_iter(items), OrderTrackingWorker(), parallelism=1, name="test"
         )
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from triggr import ReadyTask, ScheduledTaskSource
+from triggr import ReadyTask, ScheduledSource
 
 
 class FixedLister:
@@ -15,11 +15,11 @@ class FixedLister:
         return self._items[:limit]
 
 
-class TestScheduledTaskSource:
+class TestScheduledSource:
     @pytest.mark.asyncio
     async def test_wraps_items_in_ready_task(self):
         lister = FixedLister(["a", "b", "c"])
-        source = ScheduledTaskSource(lister, parallelism=10)
+        source = ScheduledSource(lister, parallelism=10)
 
         tasks = await source.retrieve_tasks()
 
@@ -31,7 +31,7 @@ class TestScheduledTaskSource:
     @pytest.mark.asyncio
     async def test_respects_parallelism_as_limit(self):
         lister = FixedLister(["a", "b", "c", "d", "e"])
-        source = ScheduledTaskSource(lister, parallelism=2)
+        source = ScheduledSource(lister, parallelism=2)
 
         tasks = await source.retrieve_tasks()
 
@@ -41,7 +41,7 @@ class TestScheduledTaskSource:
     @pytest.mark.asyncio
     async def test_empty_lister(self):
         lister = FixedLister([])
-        source = ScheduledTaskSource(lister, parallelism=10)
+        source = ScheduledSource(lister, parallelism=10)
 
         tasks = await source.retrieve_tasks()
 

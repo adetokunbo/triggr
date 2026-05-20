@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggr import AutomationConfig, PollingTaskTrigger, TaskOutcome
+from triggr import AutomationConfig, PollingTrigger, Outcome
 from .helpers import FixedSource, RecordingWorker
 
 
@@ -12,12 +12,12 @@ def config():
     return AutomationConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
 
 
-class TestPollingTaskTrigger:
+class TestPollingTrigger:
     @pytest.mark.asyncio
     async def test_processes_all_tasks(self, config):
         source = FixedSource(["a", "b", "c"], once=True)
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
         trigger.pause()
 
         result = await trigger.run_once()
@@ -29,7 +29,7 @@ class TestPollingTaskTrigger:
     async def test_returns_false_when_no_tasks(self, config):
         source = FixedSource[str]([], once=True)
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
         trigger.pause()
 
         result = await trigger.run_once()
@@ -41,7 +41,7 @@ class TestPollingTaskTrigger:
     async def test_polls_repeatedly_until_closed(self, config):
         source = FixedSource(["x"])
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
 
         trigger.run()
         await asyncio.sleep(0.05)
@@ -53,7 +53,7 @@ class TestPollingTaskTrigger:
     async def test_pause_and_resume(self, config):
         source = FixedSource(["task"])
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
 
         trigger.run()
         await asyncio.sleep(0.03)
@@ -75,8 +75,8 @@ class TestPollingTaskTrigger:
     @pytest.mark.asyncio
     async def test_failed_tasks_do_not_stop_loop(self, config):
         source = FixedSource(["ok", "fail"])
-        fail_worker = RecordingWorker[str](outcome=TaskOutcome.FAILED)
-        trigger = PollingTaskTrigger(source, fail_worker, config, name="test")
+        fail_worker = RecordingWorker[str](outcome=Outcome.FAILED)
+        trigger = PollingTrigger(source, fail_worker, config, name="test")
 
         trigger.run()
         await asyncio.sleep(0.03)
@@ -90,7 +90,7 @@ class TestPollingTaskTrigger:
         tasks = ["a", "b", "c", "d", "e"]
         source = FixedSource(tasks, once=True)
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
         trigger.pause()
 
         await trigger.run_once()
@@ -106,14 +106,14 @@ class TestPollingTaskTrigger:
         marker_started_at: list[float] = []
 
         class Worker:
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 if task == "slow":
                     await asyncio.sleep(0.15)
                 elif task == "fast":
                     await asyncio.sleep(0.01)
                 else:
                     marker_started_at.append(loop.time() - t0)
-                return TaskOutcome.SUCCESS
+                return Outcome.SUCCESS
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
@@ -121,7 +121,7 @@ class TestPollingTaskTrigger:
         # slow+fast start together; fast finishes at ~0.01s and frees a slot;
         # marker fills it immediately rather than waiting for slow (~0.15s).
         source = FixedSource(["slow", "fast", "marker"], once=True)
-        trigger = PollingTaskTrigger(source, Worker(), config)
+        trigger = PollingTrigger(source, Worker(), config)
         trigger.pause()
         await trigger.run_once()
 
@@ -132,7 +132,7 @@ class TestPollingTaskTrigger:
     async def test_is_healthy_while_running(self, config):
         source = FixedSource(["x"])
         worker = RecordingWorker[str]()
-        trigger = PollingTaskTrigger(source, worker, config, name="test")
+        trigger = PollingTrigger(source, worker, config, name="test")
 
         assert not trigger.is_healthy()
         trigger.run()

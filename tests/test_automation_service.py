@@ -9,8 +9,8 @@ from triggr import (
     AutomationService,
     PeriodicTask,
     PeriodicTrigger,
-    PollingTaskTrigger,
-    TaskOutcome,
+    PollingTrigger,
+    Outcome,
 )
 from .helpers import FixedSource, RecordingWorker
 
@@ -236,7 +236,7 @@ class TestWithRealTriggers:
 
         source = FixedSource(["task"])
         worker1 = RecordingWorker[str]()
-        poller = PollingTaskTrigger(source, worker1, config, name="poller")
+        poller = PollingTrigger(source, worker1, config, name="poller")
 
         worker2 = RecordingWorker[PeriodicTask]()
         periodic = PeriodicTrigger(worker2, interval=0.01, name="periodic")

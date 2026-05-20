@@ -6,9 +6,9 @@ import pytest
 from triggr import (
     Lifecycle,
     PollingLoop,
-    StreamTaskTrigger,
-    TaskOutcome,
-    TaskProcessor,
+    StreamTrigger,
+    Outcome,
+    Processor,
     RetryPolicy,
 )
 from .helpers import RecordingWorker
@@ -19,13 +19,13 @@ class RecordingMetrics:
 
     def __init__(self) -> None:
         self.iterations: list[float] = []
-        self.outcomes: list[tuple[TaskOutcome, float]] = []
+        self.outcomes: list[tuple[Outcome, float]] = []
         self.errors: list[Exception] = []
 
     def record_iteration(self, duration: float) -> None:
         self.iterations.append(duration)
 
-    def record_task_outcome(self, outcome: TaskOutcome, duration: float) -> None:
+    def record_task_outcome(self, outcome: Outcome, duration: float) -> None:
         self.outcomes.append((outcome, duration))
 
     def record_task_error(self, error: Exception) -> None:
@@ -38,12 +38,12 @@ class TestProcessorMetrics:
         metrics = RecordingMetrics()
         worker = RecordingWorker[str]()
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.01)
-        proc = TaskProcessor(worker, policy, metrics=metrics)
+        proc = Processor(worker, policy, metrics=metrics)
 
         await proc.process("task")
 
         assert len(metrics.outcomes) == 1
-        assert metrics.outcomes[0][0] == TaskOutcome.SUCCESS
+        assert metrics.outcomes[0][0] == Outcome.SUCCESS
         assert metrics.outcomes[0][1] > 0
 
     @pytest.mark.asyncio
@@ -51,19 +51,19 @@ class TestProcessorMetrics:
         metrics = RecordingMetrics()
 
         class AlwaysFails:
-            async def complete_task(self, task: str) -> TaskOutcome:
+            async def complete_task(self, task: str) -> Outcome:
                 raise ValueError("boom")
 
             async def is_stale_task(self, task: str) -> bool:
                 return False
 
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.01)
-        proc = TaskProcessor(AlwaysFails(), policy, metrics=metrics)
+        proc = Processor(AlwaysFails(), policy, metrics=metrics)
 
         await proc.process("task")
 
         assert len(metrics.outcomes) == 1
-        assert metrics.outcomes[0][0] == TaskOutcome.FAILED
+        assert metrics.outcomes[0][0] == Outcome.FAILED
         assert len(metrics.errors) >= 1
 
     @pytest.mark.asyncio
@@ -72,12 +72,12 @@ class TestProcessorMetrics:
         worker = RecordingWorker[str](stale=True)
         worker.fail_next = ValueError("transient")
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.01)
-        proc = TaskProcessor(worker, policy, metrics=metrics)
+        proc = Processor(worker, policy, metrics=metrics)
 
         await proc.process("task")
 
         assert len(metrics.outcomes) == 1
-        assert metrics.outcomes[0][0] == TaskOutcome.STALE
+        assert metrics.outcomes[0][0] == Outcome.STALE
 
     @pytest.mark.asyncio
     async def test_records_error_on_failure(self):
@@ -85,7 +85,7 @@ class TestProcessorMetrics:
         worker = RecordingWorker[str](stale=False)
         worker.fail_next = ValueError("transient")
         policy = RetryPolicy(max_retries=1, initial_delay=0.001, max_delay=0.01)
-        proc = TaskProcessor(worker, policy, metrics=metrics)
+        proc = Processor(worker, policy, metrics=metrics)
 
         await proc.process("task")
 
@@ -180,7 +180,7 @@ class TestStreamTriggerTimedHealth:
             await asyncio.sleep(10.0)  # stuck after first
 
         worker = RecordingWorker[str]()
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             slow_stream(), worker, grace_period=0.03, name="test"
         )
 

@@ -18,14 +18,14 @@ class ReadyTask(Generic[T]):
         return f"ReadyTask(ready_at={self.ready_at}, work={self.work})"
 
 
-class ScheduledTaskSource(Generic[T]):
-    """TaskSource adapter that wraps a ReadyTaskLister.
+class ScheduledSource(Generic[T]):
+    """Source adapter that wraps a ReadyLister.
 
     Queries for tasks that are ready at the current time, wraps them
-    in ReadyTask. Plugs into PollingTaskTrigger as a TaskSource.
+    in ReadyTask. Plugs into PollingTrigger as a Source.
     """
 
-    def __init__(self, lister: ReadyTaskLister[T], parallelism: int) -> None:
+    def __init__(self, lister: ReadyLister[T], parallelism: int) -> None:
         self._lister = lister
         self._parallelism = parallelism
 

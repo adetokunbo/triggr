@@ -7,11 +7,11 @@ from triggr import (
     AutomationConfig,
     CompositeGate,
     EventGate,
-    PollingTaskTrigger,
-    StreamTaskTrigger,
+    PollingTrigger,
+    StreamTrigger,
     PeriodicTask,
     PeriodicTrigger,
-    TaskOutcome,
+    Outcome,
     compose_gates,
 )
 from .helpers import FixedSource, RecordingWorker, async_iter
@@ -123,7 +123,7 @@ class TestTriggerWithReadinessGate:
         source = FixedSource(["task"])
         worker = RecordingWorker[str]()
 
-        trigger = PollingTaskTrigger(
+        trigger = PollingTrigger(
             source, worker, config, ready_gate=gate, name="test"
         )
         trigger.run()
@@ -143,7 +143,7 @@ class TestTriggerWithReadinessGate:
         gate.set_not_ready()
         worker = RecordingWorker[str]()
 
-        trigger = StreamTaskTrigger(
+        trigger = StreamTrigger(
             async_iter(["a", "b", "c"]), worker, ready_gate=gate, name="test"
         )
         trigger.run()

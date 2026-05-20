@@ -8,8 +8,8 @@ from triggr import (
     ErrorKind,
     Lifecycle,
     PollingLoop,
-    TaskOutcome,
-    TaskProcessor,
+    Outcome,
+    Processor,
     RetryPolicy,
 )
 
@@ -28,7 +28,7 @@ class AlwaysFailsWorker:
         self._error = error
         self.attempts = 0
 
-    async def complete_task(self, task: str) -> TaskOutcome:
+    async def complete_task(self, task: str) -> Outcome:
         self.attempts += 1
         raise self._error
 
@@ -41,7 +41,7 @@ class TestErrorClassificationInProcessor:
     async def test_fatal_error_no_retry(self):
         policy = RetryPolicy(max_retries=5, initial_delay=0.001, max_delay=0.01)
         worker = AlwaysFailsWorker(ValueError("fatal"))
-        proc = TaskProcessor(worker, policy, error_classifier=FatalOnValueError())
+        proc = Processor(worker, policy, error_classifier=FatalOnValueError())
 
         result = await proc.process("task")
 
@@ -52,7 +52,7 @@ class TestErrorClassificationInProcessor:
     async def test_transient_error_retries(self):
         policy = RetryPolicy(max_retries=3, initial_delay=0.001, max_delay=0.01)
         worker = AlwaysFailsWorker(RuntimeError("transient"))
-        proc = TaskProcessor(worker, policy, error_classifier=FatalOnValueError())
+        proc = Processor(worker, policy, error_classifier=FatalOnValueError())
 
         result = await proc.process("task")
 
@@ -63,7 +63,7 @@ class TestErrorClassificationInProcessor:
     async def test_default_classifier_retries_everything(self):
         policy = RetryPolicy(max_retries=2, initial_delay=0.001, max_delay=0.01)
         worker = AlwaysFailsWorker(ValueError("would be fatal"))
-        proc = TaskProcessor(worker, policy)
+        proc = Processor(worker, policy)
 
         result = await proc.process("task")
 
