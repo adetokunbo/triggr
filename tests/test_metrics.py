@@ -25,10 +25,10 @@ class RecordingMetrics:
     def record_iteration(self, duration: float) -> None:
         self.iterations.append(duration)
 
-    def record_task_outcome(self, outcome: Outcome, duration: float) -> None:
+    def record_outcome(self, outcome: Outcome, duration: float) -> None:
         self.outcomes.append((outcome, duration))
 
-    def record_task_error(self, error: Exception) -> None:
+    def record_error(self, error: Exception) -> None:
         self.errors.append(error)
 
 

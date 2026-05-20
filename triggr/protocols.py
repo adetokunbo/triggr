@@ -96,9 +96,9 @@ class TriggerMetrics(Protocol):
 
     def record_iteration(self, duration: float) -> None: ...
 
-    def record_task_outcome(self, outcome: Outcome, duration: float) -> None: ...
+    def record_outcome(self, outcome: Outcome, duration: float) -> None: ...
 
-    def record_task_error(self, error: Exception) -> None: ...
+    def record_error(self, error: Exception) -> None: ...
 
 
 class NoOpMetrics:
@@ -107,8 +107,8 @@ class NoOpMetrics:
     def record_iteration(self, duration: float) -> None:
         pass
 
-    def record_task_outcome(self, outcome: Outcome, duration: float) -> None:
+    def record_outcome(self, outcome: Outcome, duration: float) -> None:
         pass
 
-    def record_task_error(self, error: Exception) -> None:
+    def record_error(self, error: Exception) -> None:
         pass

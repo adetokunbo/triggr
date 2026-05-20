@@ -66,13 +66,13 @@ class Processor(Generic[T]):
             )
         except RetriesExhausted as e:
             elapsed = time.monotonic() - t0
-            self._metrics.record_task_error(e.last_error)
-            self._metrics.record_task_outcome(Outcome.FAILED, elapsed)
+            self._metrics.record_error(e.last_error)
+            self._metrics.record_outcome(Outcome.FAILED, elapsed)
             self._logger.error("Task %s failed after retries: %s", task, e.last_error)
             return False
 
         elapsed = time.monotonic() - t0
-        self._metrics.record_task_outcome(outcome, elapsed)
+        self._metrics.record_outcome(outcome, elapsed)
 
         if outcome == Outcome.SUCCESS:
             self._logger.info("Task %s completed", task)
@@ -92,7 +92,7 @@ class Processor(Generic[T]):
         try:
             return await self._worker.complete(task)
         except Exception as e:
-            self._metrics.record_task_error(e)
+            self._metrics.record_error(e)
             if await self._worker.is_stale(task):
                 return Outcome.STALE
             raise
