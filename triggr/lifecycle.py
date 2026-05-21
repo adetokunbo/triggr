@@ -1,7 +1,30 @@
-"""Pause/resume/close state shared between a trigger and its components.
+"""Pause/resume/close state for a trigger and its components.
 
-Lifecycle is a standalone component — triggers create one instance and pass
-it to PollingLoop and Processor rather than inheriting shared state.
+``Lifecycle`` is used internally by triggers. Each trigger owns one
+instance and delegates its ``pause()``, ``resume()``, and ``close()``
+methods to it, which is why those methods exist on every trigger type::
+
+    trigger = PollingTrigger(source, worker, config)
+    trigger.run()
+
+    trigger.pause()    # delegates to lifecycle.pause() — blocks after current task
+    trigger.resume()   # delegates to lifecycle.resume() — unblocks
+    trigger.close()    # delegates to lifecycle.close() — shuts down permanently
+
+To start a trigger suspended and resume it later — useful when registering
+several triggers that should start together::
+
+    svc = TriggerService()
+    svc.register("orders", PollingTrigger(PendingOrderSource(), FulfillmentWorker(), config))
+    svc.register("inventory-sync", PeriodicTrigger(InventorySyncWorker(), interval=60.0))
+    svc.start_all(paused=True)
+
+    await warm_up()
+
+    svc.resume_all()
+
+``Lifecycle`` can also be used directly when building a custom
+``ManagedService`` that needs the same pause/resume semantics as triggers.
 """
 
 from __future__ import annotations
