@@ -1,9 +1,30 @@
-"""Standalone async polling loop with interval, jitter, and health tracking.
+"""Interval-based async polling loop with health tracking.
 
-PollingLoop is not tied to triggers — it can drive any periodic async
-operation. It calls a callback on a configurable interval, loops
-immediately when the callback signals more work is available, tracks
-consecutive failures, and reports health based on last completion time.
+``PollingLoop`` drives the timing for ``PollingTrigger`` and
+``PeriodicTrigger`` — most callers never instantiate it directly.
+
+The callback returns ``True`` to loop immediately when there is more
+work to do, or ``False`` to wait for the next interval. ``PollingTrigger``
+uses this to drain a backlog without waiting between batches::
+
+    # internally, PollingTrigger._poll_once returns True when tasks were found
+    async def _poll_once(self) -> bool:
+        tasks = await self._source.retrieve()
+        if not tasks:
+            return False          # nothing found — wait for next interval
+        await self._process(tasks)
+        return True               # may be more — loop immediately
+
+Health is reported via ``is_healthy()``, which returns ``False`` if the
+loop has not completed an iteration within ``2 * interval`` seconds. A
+loop that is stuck on a slow callback or blocked by a gate is considered
+unhealthy after this grace period.
+
+Transient errors are silenced up to ``max_silent_failures`` consecutive
+failures before a warning is logged. This prevents log noise during
+brief outages — for example, a warehouse connection dropping and
+recovering within a few polling cycles — while still surfacing persistent
+problems.
 """
 
 from __future__ import annotations
