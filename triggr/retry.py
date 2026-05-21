@@ -1,8 +1,43 @@
-"""Retry policy and async retry helper with exponential backoff.
+"""Retry policy and exponential backoff for async operations.
 
-Provides RetryPolicy (configurable backoff parameters), two pre-built
-policies (DEFAULT, LONG_RUNNING), and the retry() coroutine used by
-Processor and RetryingService.
+Two pre-built policies cover most cases::
+
+    from triggr import DEFAULT, LONG_RUNNING, PollingTrigger, TriggerConfig
+
+    config = TriggerConfig(polling_interval=30.0)
+
+    # DEFAULT: for triggers — up to 35 retries, 0.2s → 5s backoff
+    trigger = PollingTrigger(source, worker, config, retry_policy=DEFAULT)
+
+    # LONG_RUNNING: for RetryingService — same backoff, but resets the
+    # retry counter after 60s of successful operation so a service that
+    # runs for hours doesn't exhaust its budget from early failures
+    svc = RetryingService(factory=create_service, retry_policy=LONG_RUNNING)
+
+To tune backoff for a specific trigger::
+
+    from triggr import RetryPolicy, PollingTrigger, TriggerConfig
+
+    config = TriggerConfig(polling_interval=30.0)
+    policy = RetryPolicy(max_retries=10, initial_delay=1.0, max_delay=30.0)
+    trigger = PollingTrigger(source, worker, config, retry_policy=policy)
+
+``retry()`` is used internally by ``Processor`` and ``RetryingService``.
+The ``between_attempts`` hook is how readiness gates are re-checked between
+retries — if the gate blocks, the next attempt waits until it clears::
+
+    from triggr import retry, RetryPolicy, EventGate
+
+    gate = EventGate()
+    policy = RetryPolicy(max_retries=5, initial_delay=0.5, max_delay=10.0)
+
+    outcome = await retry(
+        policy,
+        operation=lambda: fulfillment_worker.complete(order),
+        description="fulfil order",
+        is_retryable=lambda e: not isinstance(e, PaymentDeclinedError),
+        between_attempts=warehouse_gate.wait_until_ready,
+    )
 """
 
 from __future__ import annotations
