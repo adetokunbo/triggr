@@ -1,8 +1,37 @@
-"""ScheduledSource: time-based task retrieval for PollingTrigger.
+"""Source adapter for time-based task retrieval.
 
-Wraps a ReadyLister and exposes it as a Source. Use this to build
-triggers that process items whose scheduled time has passed — expiry
-archival, delayed jobs, time-windowed work.
+``ScheduledSource`` wraps a ``ReadyLister[T]`` and exposes it as a
+``Source[ReadyTask[T]]``. It queries for items whose scheduled time has
+passed and wraps each one in a ``ReadyTask`` before handing it to the
+worker — so the worker receives a ``ReadyTask[Shipment]``, not a raw
+``Shipment``.
+
+End-to-end: implement ``ReadyLister``, wrap it in ``ScheduledSource``,
+and implement ``Worker[ReadyTask[T]]``::
+
+    from triggr import ScheduledSource, PollingTrigger, TriggerConfig, ReadyTask, Outcome
+    import time
+
+    class ScheduledShipmentLister:
+        async def list_ready(self, now: float, limit: int) -> list[Shipment]:
+            return await db.fetch_shipments(dispatch_before=now, limit=limit)
+
+    class FulfillmentWorker:
+        async def complete(self, task: ReadyTask[Shipment]) -> Outcome:
+            age = time.time() - task.ready_at
+            if age > MAX_DELAY:
+                await notify_delay(task.work)
+            await warehouse.ship(task.work)
+            return Outcome.SUCCESS
+
+        async def is_stale(self, task: ReadyTask[Shipment]) -> bool:
+            return await db.is_cancelled(task.work.id)
+
+    source = ScheduledSource(lister=ScheduledShipmentLister(), parallelism=4)
+    trigger = PollingTrigger(source, FulfillmentWorker(), TriggerConfig())
+
+``ready_at`` is the Unix timestamp recorded when the task was retrieved.
+The worker can use it to measure how long a shipment has been waiting.
 """
 
 from __future__ import annotations
