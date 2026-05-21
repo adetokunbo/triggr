@@ -58,7 +58,6 @@ import time
 from dataclasses import dataclass
 from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 
-from .config import PollingConfig
 from .gates import compose_gates
 from .lifecycle import Lifecycle
 from .outcome import Outcome
@@ -77,6 +76,25 @@ from .retry import DEFAULT, RetryPolicy
 T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class PollingConfig:
+    """Configuration for ``PollingTrigger``.
+
+    - ``polling_interval``: seconds between poll cycles when no work is found.
+      If the source returns tasks, the loop polls again immediately without waiting.
+    - ``polling_jitter``: fraction of ``polling_interval`` added as random noise,
+      preventing multiple triggers from polling in lockstep. At the default of 0.2,
+      a 30s interval varies between 24s and 36s.
+    - ``parallelism``: maximum number of tasks processed concurrently within a poll cycle.
+    - ``max_silent_failures``: consecutive source errors to tolerate before logging a warning.
+    """
+
+    polling_interval: float = 30.0
+    polling_jitter: float = 0.2
+    parallelism: int = 4
+    max_silent_failures: int = 3
 
 
 def _make_gate(

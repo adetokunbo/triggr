@@ -25,7 +25,6 @@ Typical usage::
     trigger.run()
 """
 
-from .config import PollingConfig
 from .lifecycle import Lifecycle
 from .outcome import Outcome
 from .polling_loop import PollingLoop
@@ -48,7 +47,7 @@ from .retry import DEFAULT, LONG_RUNNING, RetryPolicy
 from .scheduled import ReadyTask, ScheduledSource
 from .retrying_service import RetryingService
 from .trigger_service import TriggerService
-from .triggers import PeriodicTask, PeriodicTrigger, PollingTrigger, StreamTrigger
+from .triggers import PeriodicTask, PeriodicTrigger, PollingConfig, PollingTrigger, StreamTrigger
 
 __all__ = [
     "PollingConfig",
