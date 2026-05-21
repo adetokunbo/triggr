@@ -1,8 +1,32 @@
-"""TriggerService: registry and lifecycle manager for named triggers.
+"""Registry and lifecycle manager for a named collection of triggers.
 
-Handles registration, startup (optionally paused), health aggregation,
-pause/resume, and shutdown of a collection of triggers. Optionally
-validates that a declared set of triggers is registered before starting.
+Register triggers by name, then start, monitor, and shut them down
+together::
+
+    from triggr import TriggerService, PollingTrigger, PeriodicTrigger, TriggerConfig
+
+    config = TriggerConfig(polling_interval=30.0, parallelism=4)
+
+    svc = TriggerService()
+    svc.register("orders", PollingTrigger(PendingOrderSource(), FulfillmentWorker(), config))
+    svc.register("inventory-sync", PeriodicTrigger(InventorySyncWorker(), interval=60.0))
+    svc.start_all()
+
+    svc.is_healthy()        # True if all triggers are healthy
+    svc.trigger_health()    # {"orders": True, "inventory-sync": True}
+
+Pass ``expected`` to declare exactly which triggers must be registered.
+``start_all()`` raises if there is any mismatch — useful for catching
+typos or missing registrations at startup::
+
+    svc = TriggerService(expected={"orders", "inventory-sync"})
+    svc.register("orders", PollingTrigger(...))
+    # forgot to register "inventory-sync"
+    svc.start_all()   # raises RuntimeError: expected triggers not registered: {'inventory-sync'}
+
+To shut down gracefully::
+
+    svc.close_all()
 """
 
 from __future__ import annotations
