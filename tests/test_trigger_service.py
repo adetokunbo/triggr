@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import pytest
 
 from triggr import (
@@ -172,61 +171,31 @@ class TestCloseAll:
 
 
 class TestExpectedValidation:
-    def test_warns_on_missing(self, caplog):
+    def test_raises_on_missing(self):
         svc = TriggerService(expected={"a", "b", "c"})
         svc.register("a", FakeTrigger())
 
-        with caplog.at_level(logging.WARNING):
+        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
             svc.start_all()
 
-        assert "not registered" in caplog.text
-        assert "b" in caplog.text or "c" in caplog.text
-
-    def test_warns_on_unexpected(self, caplog):
+    def test_raises_on_unexpected(self):
         svc = TriggerService(expected={"a"})
         svc.register("a", FakeTrigger())
         svc.register("extra", FakeTrigger())
 
-        with caplog.at_level(logging.WARNING):
+        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
             svc.start_all()
 
-        assert "Unexpected" in caplog.text
-        assert "extra" in caplog.text
-
-    def test_no_warning_when_matched(self, caplog):
+    def test_no_error_when_matched(self):
         svc = TriggerService(expected={"a", "b"})
         svc.register("a", FakeTrigger())
         svc.register("b", FakeTrigger())
+        svc.start_all()  # should not raise
 
-        with caplog.at_level(logging.WARNING):
-            svc.start_all()
-
-        assert "not registered" not in caplog.text
-        assert "Unexpected" not in caplog.text
-
-    def test_raises_on_missing_when_strict(self):
-        svc = TriggerService(expected={"a", "b"}, strict=True)
-        svc.register("a", FakeTrigger())
-
-        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
-            svc.start_all()
-
-    def test_raises_on_unexpected_when_strict(self):
-        svc = TriggerService(expected={"a"}, strict=True)
-        svc.register("a", FakeTrigger())
-        svc.register("extra", FakeTrigger())
-
-        with pytest.raises(RuntimeError, match="Trigger set mismatch"):
-            svc.start_all()
-
-    def test_no_validation_without_expected(self, caplog):
+    def test_no_validation_without_expected(self):
         svc = TriggerService()
         svc.register("anything", FakeTrigger())
-
-        with caplog.at_level(logging.WARNING):
-            svc.start_all()
-
-        assert caplog.text == "" or "not registered" not in caplog.text
+        svc.start_all()  # should not raise
 
 
 class TestWithRealTriggers:

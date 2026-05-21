@@ -19,17 +19,14 @@ class TriggerService:
     """Manages a collection of named triggers.
 
     Handles registration, startup, health aggregation, and shutdown.
-    Optionally validates that all expected triggers are registered.
     """
 
     def __init__(
         self,
         expected: set[str] | None = None,
         name: str = "",
-        strict: bool = False,
     ) -> None:
         self._expected = expected
-        self._strict = strict
         self._triggers: dict[str, Trigger] = {}
         self._started = False
         self._logger = logging.getLogger(f"service.{name}" if name else __name__)
@@ -88,10 +85,4 @@ class TriggerService:
                 msg_parts.append(f"expected triggers not registered: {missing}")
             if unexpected:
                 msg_parts.append(f"unexpected triggers registered: {unexpected}")
-            msg = "; ".join(msg_parts)
-            if self._strict:
-                raise RuntimeError(f"Trigger set mismatch — {msg}")
-            if missing:
-                self._logger.warning("Expected triggers not registered: %s", missing)
-            if unexpected:
-                self._logger.warning("Unexpected triggers registered: %s", unexpected)
+            raise RuntimeError(f"Trigger set mismatch — {'; '.join(msg_parts)}")
