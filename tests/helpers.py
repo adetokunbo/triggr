@@ -4,7 +4,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Generic, TypeVar
 
-from triggr.outcome import Outcome
+from triggr.protocols import Outcome
 
 T = TypeVar("T")
 

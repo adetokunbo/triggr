@@ -60,12 +60,12 @@ from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 
 from .gates import compose_gates
 from .lifecycle import Lifecycle
-from .outcome import Outcome
 from .polling_loop import PollingLoop
 from .processor import Processor
 from .protocols import (
     ErrorClassifier,
     HasHealth,
+    Outcome,
     ReadinessGate,
     Source,
     Worker,

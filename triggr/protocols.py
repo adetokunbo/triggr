@@ -59,10 +59,35 @@ import asyncio
 from enum import Enum, auto
 from typing import AsyncIterator, Generic, Protocol, TypeVar, runtime_checkable
 
-from .outcome import Outcome
-
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
+
+
+class Outcome(Enum):
+    """Outcome of a single task attempt, returned by ``Worker.complete``.
+
+    Four values cover the cases a worker needs to signal::
+
+        class FulfillmentWorker:
+            async def complete(self, order: Order) -> Outcome:
+                if order.is_already_shipped():
+                    return Outcome.NOOP       # nothing to do; not an error
+                if not await warehouse.ship(order):
+                    return Outcome.FAILED     # failed; will be retried
+                return Outcome.SUCCESS        # done
+
+    ``STALE`` is returned by ``Processor`` when ``Worker.is_stale`` returns
+    ``True`` between retry attempts — the worker does not return it directly.
+
+    ``Processor`` treats ``SUCCESS`` and ``STALE`` as positive completions
+    and ``FAILED`` and ``NOOP`` as non-completions that do not count toward
+    progress.
+    """
+
+    SUCCESS = auto()
+    FAILED = auto()
+    NOOP = auto()
+    STALE = auto()
 
 
 class ErrorKind(Enum):

@@ -38,7 +38,7 @@ import logging
 import time
 from typing import Awaitable, Callable, Generic, TypeVar
 
-from .outcome import Outcome
+from .protocols import Outcome
 from .protocols import (
     TransientErrors,
     ErrorClassifier,

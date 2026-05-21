@@ -26,7 +26,6 @@ Typical usage::
 """
 
 from .lifecycle import Lifecycle
-from .outcome import Outcome
 from .polling_loop import PollingLoop
 from .processor import Processor
 from .protocols import (
@@ -36,6 +35,7 @@ from .protocols import (
     HasHealth,
     ManagedService,
     NoOpMetrics,
+    Outcome,
     ReadinessGate,
     ReadyLister,
     Source,
