@@ -2,9 +2,9 @@
 
 Two pre-built policies cover most cases::
 
-    from triggr import DEFAULT, LONG_RUNNING, PollingTrigger, TriggerConfig
+    from triggr import DEFAULT, LONG_RUNNING, PollingTrigger, PollingConfig
 
-    config = TriggerConfig(polling_interval=30.0)
+    config = PollingConfig(polling_interval=30.0)
 
     # DEFAULT: for triggers — up to 35 retries, 0.2s → 5s backoff
     trigger = PollingTrigger(source, worker, config, retry_policy=DEFAULT)
@@ -16,9 +16,9 @@ Two pre-built policies cover most cases::
 
 To tune backoff for a specific trigger::
 
-    from triggr import RetryPolicy, PollingTrigger, TriggerConfig
+    from triggr import RetryPolicy, PollingTrigger, PollingConfig
 
-    config = TriggerConfig(polling_interval=30.0)
+    config = PollingConfig(polling_interval=30.0)
     policy = RetryPolicy(max_retries=10, initial_delay=1.0, max_delay=30.0)
     trigger = PollingTrigger(source, worker, config, retry_policy=policy)
 

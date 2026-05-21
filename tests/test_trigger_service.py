@@ -4,7 +4,7 @@ import asyncio
 import pytest
 
 from triggr import (
-    TriggerConfig,
+    PollingConfig,
     TriggerService,
     PeriodicTask,
     PeriodicTrigger,
@@ -16,7 +16,7 @@ from .helpers import FixedSource, RecordingWorker
 
 @pytest.fixture
 def config():
-    return TriggerConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
+    return PollingConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
 
 
 class FakeTrigger:

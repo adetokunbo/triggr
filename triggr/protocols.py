@@ -29,7 +29,7 @@ scheduled time. The framework passes the current Unix timestamp as ``now``
 and the configured parallelism as ``limit``; the lister should return only
 tasks whose scheduled time has passed, up to ``limit`` items::
 
-    from triggr import ReadyLister, ScheduledSource, PollingTrigger, TriggerConfig
+    from triggr import ReadyLister, ScheduledSource, PollingTrigger, PollingConfig
 
     class ScheduledShipmentLister:
         async def list_ready(self, now: float, limit: int) -> list[Shipment]:
@@ -37,7 +37,7 @@ tasks whose scheduled time has passed, up to ``limit`` items::
             return await db.fetch_shipments(dispatch_before=now, limit=limit)
 
     source = ScheduledSource(lister=ScheduledShipmentLister(), parallelism=4)
-    trigger = PollingTrigger(source, FulfillmentWorker(), TriggerConfig())
+    trigger = PollingTrigger(source, FulfillmentWorker(), PollingConfig())
 
 To classify errors as transient (retry) or fatal (stop retrying)::
 

@@ -3,9 +3,9 @@
 ``PollingTrigger`` polls a ``Source`` on an interval and processes tasks
 in parallel, with sliding-window concurrency bounded by ``parallelism``::
 
-    from triggr import PollingTrigger, TriggerConfig
+    from triggr import PollingTrigger, PollingConfig
 
-    config = TriggerConfig(polling_interval=30.0, parallelism=4)
+    config = PollingConfig(polling_interval=30.0, parallelism=4)
     trigger = PollingTrigger(
         source=PendingOrderSource(),
         worker=FulfillmentWorker(),
@@ -58,7 +58,7 @@ import time
 from dataclasses import dataclass
 from typing import AsyncIterator, Awaitable, Callable, Generic, TypeVar
 
-from .config import TriggerConfig
+from .config import PollingConfig
 from .gates import compose_gates
 from .lifecycle import Lifecycle
 from .outcome import Outcome
@@ -99,7 +99,7 @@ class PollingTrigger(Generic[T]):
         self,
         source: Source[T],
         worker: Worker[T],
-        config: TriggerConfig,
+        config: PollingConfig,
         retry_policy: RetryPolicy = DEFAULT,
         error_classifier: ErrorClassifier | None = None,
         metrics: TriggerMetrics | None = None,

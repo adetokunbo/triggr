@@ -6,7 +6,7 @@ no external runtime dependencies.
 
 Typical usage::
 
-    from triggr import PollingTrigger, TriggerConfig, Outcome
+    from triggr import PollingTrigger, PollingConfig, Outcome
 
     class MySource:
         async def retrieve(self) -> list[str]:
@@ -20,12 +20,12 @@ Typical usage::
         async def is_stale(self, task: str) -> bool:
             return False
 
-    config = TriggerConfig(polling_interval=5.0)
+    config = PollingConfig(polling_interval=5.0)
     trigger = PollingTrigger(MySource(), MyWorker(), config)
     trigger.run()
 """
 
-from .config import TriggerConfig
+from .config import PollingConfig
 from .lifecycle import Lifecycle
 from .outcome import Outcome
 from .polling_loop import PollingLoop
@@ -51,7 +51,7 @@ from .trigger_service import TriggerService
 from .triggers import PeriodicTask, PeriodicTrigger, PollingTrigger, StreamTrigger
 
 __all__ = [
-    "TriggerConfig",
+    "PollingConfig",
     "Lifecycle",
     "Outcome",
     "PollingLoop",

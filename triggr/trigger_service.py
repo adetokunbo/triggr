@@ -3,9 +3,9 @@
 Register triggers by name, then start, monitor, and shut them down
 together::
 
-    from triggr import TriggerService, PollingTrigger, PeriodicTrigger, TriggerConfig
+    from triggr import TriggerService, PollingTrigger, PeriodicTrigger, PollingConfig
 
-    config = TriggerConfig(polling_interval=30.0, parallelism=4)
+    config = PollingConfig(polling_interval=30.0, parallelism=4)
 
     svc = TriggerService()
     svc.register("orders", PollingTrigger(PendingOrderSource(), FulfillmentWorker(), config))

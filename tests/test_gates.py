@@ -4,7 +4,7 @@ import asyncio
 import pytest
 
 from triggr import (
-    TriggerConfig,
+    PollingConfig,
     CompositeGate,
     EventGate,
     PollingTrigger,
@@ -119,7 +119,7 @@ class TestTriggerWithReadinessGate:
     async def test_polling_trigger_blocks_on_gate(self):
         gate = EventGate()
         gate.set_not_ready()
-        config = TriggerConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
+        config = PollingConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
         source = FixedSource(["task"])
         worker = RecordingWorker[str]()
 

@@ -9,7 +9,7 @@ worker — so the worker receives a ``ReadyTask[Shipment]``, not a raw
 End-to-end: implement ``ReadyLister``, wrap it in ``ScheduledSource``,
 and implement ``Worker[ReadyTask[T]]``::
 
-    from triggr import ScheduledSource, PollingTrigger, TriggerConfig, ReadyTask, Outcome
+    from triggr import ScheduledSource, PollingTrigger, PollingConfig, ReadyTask, Outcome
     import time
 
     class ScheduledShipmentLister:
@@ -28,7 +28,7 @@ and implement ``Worker[ReadyTask[T]]``::
             return await db.is_cancelled(task.work.id)
 
     source = ScheduledSource(lister=ScheduledShipmentLister(), parallelism=4)
-    trigger = PollingTrigger(source, FulfillmentWorker(), TriggerConfig())
+    trigger = PollingTrigger(source, FulfillmentWorker(), PollingConfig())
 
 ``ready_at`` is the Unix timestamp recorded when the task was retrieved.
 The worker can use it to measure how long a shipment has been waiting.

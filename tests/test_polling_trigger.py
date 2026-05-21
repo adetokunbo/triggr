@@ -3,13 +3,13 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from triggr import TriggerConfig, PollingTrigger, Outcome
+from triggr import PollingConfig, PollingTrigger, Outcome
 from .helpers import FixedSource, RecordingWorker
 
 
 @pytest.fixture
 def config():
-    return TriggerConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
+    return PollingConfig(polling_interval=0.01, polling_jitter=0, parallelism=4)
 
 
 class TestPollingTrigger:
@@ -100,7 +100,7 @@ class TestPollingTrigger:
     @pytest.mark.asyncio
     async def test_sliding_window_fills_slot_immediately(self):
         """A free parallelism slot is filled as soon as any task finishes, not after a full batch."""
-        config = TriggerConfig(polling_interval=0.01, polling_jitter=0, parallelism=2)
+        config = PollingConfig(polling_interval=0.01, polling_jitter=0, parallelism=2)
         loop = asyncio.get_event_loop()
         t0 = loop.time()
         marker_started_at: list[float] = []
