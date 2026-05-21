@@ -76,11 +76,11 @@ class TriggerService:
         return {name: t.is_healthy() for name, t in self._triggers.items()}
 
     def pause_all(self) -> None:
-        for name, trigger in self._triggers.items():
+        for trigger in self._triggers.values():
             trigger.pause()
 
     def resume_all(self) -> None:
-        for name, trigger in self._triggers.items():
+        for trigger in self._triggers.values():
             trigger.resume()
 
     def close_all(self) -> None:
@@ -104,7 +104,7 @@ class TriggerService:
         missing = self._expected - registered
         unexpected = registered - self._expected
         if missing or unexpected:
-            msg_parts = []
+            msg_parts: list[str] = []
             if missing:
                 msg_parts.append(f"expected triggers not registered: {missing}")
             if unexpected:

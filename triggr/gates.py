@@ -37,6 +37,8 @@ from __future__ import annotations
 import asyncio
 from typing import Awaitable, Callable
 
+from .protocols import ReadinessGate
+
 
 class EventGate:
     """Readiness gate backed by an asyncio.Event.
@@ -64,7 +66,7 @@ class CompositeGate:
     All gates must be ready before the composite is ready.
     """
 
-    def __init__(self, *gates: object) -> None:
+    def __init__(self, *gates: ReadinessGate) -> None:
         self._gates = gates
 
     async def wait_until_ready(self) -> None:

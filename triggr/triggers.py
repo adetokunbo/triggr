@@ -64,8 +64,6 @@ from .polling_loop import PollingLoop
 from .processor import Processor
 from .protocols import (
     ErrorClassifier,
-    HasHealth,
-    Outcome,
     ReadinessGate,
     Source,
     Worker,

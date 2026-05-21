@@ -57,10 +57,10 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum, auto
-from typing import AsyncIterator, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 T = TypeVar("T")
-T_co = TypeVar("T_co", covariant=True)
+T_contra = TypeVar("T_contra", contravariant=True)
 
 
 class Outcome(Enum):
@@ -113,30 +113,30 @@ class HasHealth(Protocol):
     def is_healthy(self) -> bool: ...
 
 
-class Worker(Protocol[T]):
+class Worker(Protocol[T_contra]):
     """User-provided logic for completing and staleness-checking tasks."""
 
-    async def complete(self, task: T) -> Outcome: ...
+    async def complete(self, task: T_contra) -> Outcome: ...
 
-    async def is_stale(self, task: T) -> bool: ...
+    async def is_stale(self, task: T_contra) -> bool: ...
 
 
-class Source(Protocol[T_co]):
+class Source(Protocol[T]):
     """User-provided logic for retrieving tasks to process."""
 
-    async def retrieve(self) -> list[T_co]: ...
+    async def retrieve(self) -> list[T]: ...
 
 
-class ReadyLister(Protocol[T_co]):
+class ReadyLister(Protocol[T]):
     """User-provided logic for listing time-ready tasks."""
 
-    async def list_ready(self, now: float, limit: int) -> list[T_co]: ...
+    async def list_ready(self, now: float, limit: int) -> list[T]: ...
 
 
 class Trigger(Protocol):
     """Common interface for all trigger types."""
 
-    def run(self, paused: bool = False) -> None: ...
+    def run(self, paused: bool = False) -> asyncio.Task[None]: ...
 
     def pause(self) -> None: ...
 
