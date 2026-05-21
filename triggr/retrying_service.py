@@ -1,10 +1,41 @@
-"""RetryingService: two-level retry for long-running async services.
+"""Keeps a long-running async service alive with two-level retry.
 
-Keeps a ManagedService alive indefinitely. Inner level retries service
-instantiation with exponential backoff; if retries exhaust, the outer
-level waits restart_interval and tries again. Reuses PollingLoop for
-the outer loop and Lifecycle for pause/resume, so health and lifecycle
-management are consistent with triggers.
+Some services need to stay running indefinitely — ingesting events,
+maintaining a connection, or streaming updates. ``RetryingService``
+wraps a factory that creates such a service and restarts it if it dies.
+
+The factory is an async callable that returns a ``ManagedService``::
+
+    from triggr import RetryingService, LONG_RUNNING
+
+    async def create_shipment_stream() -> ShipmentStreamService:
+        client = await warehouse.connect()
+        return ShipmentStreamService(client)
+
+    svc = RetryingService(factory=create_shipment_stream)
+    svc.run()
+
+Two levels of retry keep the service alive:
+
+- **Inner**: if the factory raises, it retries with exponential backoff
+  until ``LONG_RUNNING`` retries are exhausted.
+- **Outer**: if inner retries exhaust, it waits ``restart_interval``
+  seconds and tries the whole sequence again — indefinitely.
+
+The retry counter resets after the service has been running for 60s
+(``LONG_RUNNING.reset_retries_after``), so a service that connects
+successfully but later drops does not inherit a depleted retry budget
+from its first connection attempt::
+
+    svc = RetryingService(
+        factory=create_shipment_stream,
+        retry_policy=LONG_RUNNING,
+        restart_interval=30.0,
+    )
+    svc.run()
+
+``RetryingService`` supports the same ``pause()``, ``resume()``,
+``close()``, and ``is_healthy()`` interface as triggers.
 """
 
 from __future__ import annotations
