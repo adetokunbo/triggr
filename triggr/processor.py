@@ -1,8 +1,35 @@
-"""Processor: retry and staleness logic for a single task.
+"""Wraps a Worker with retry, staleness detection, and metrics.
 
-Independently testable — does not depend on triggers, polling, or
-lifecycle management. Wraps a Worker with exponential backoff retry,
-staleness detection between attempts, error classification, and metrics.
+``Processor`` is used internally by all trigger types — most callers
+never instantiate it directly. Understanding it helps when reasoning
+about what happens between a task being retrieved and its outcome being
+recorded.
+
+When a task is processed, ``Processor`` calls ``worker.complete(task)``.
+If it raises, the error is classified and — if transient — retried with
+exponential backoff. Between retries, the readiness gate is re-checked,
+so a paused trigger stays paused even mid-retry.
+
+Before each retry attempt, ``worker.is_stale(task)`` is called. If the
+task has been cancelled or superseded since it was retrieved, the attempt
+is abandoned and ``Outcome.STALE`` is returned rather than retrying::
+
+    class FulfillmentWorker:
+        async def complete(self, order: Order) -> Outcome:
+            await warehouse.ship(order)
+            return Outcome.SUCCESS
+
+        async def is_stale(self, order: Order) -> bool:
+            # order may have been cancelled while waiting to be processed
+            return await db.is_cancelled(order.id)
+
+``Processor`` can be used standalone for testing a worker in isolation,
+without needing a full trigger::
+
+    from triggr import Processor, DEFAULT
+
+    processor = Processor(FulfillmentWorker(), retry_policy=DEFAULT)
+    succeeded = await processor.process(order)
 """
 
 from __future__ import annotations
