@@ -1,8 +1,35 @@
 """Readiness gates: conditions that must be met before a trigger proceeds.
 
-EventGate wraps an asyncio.Event for simple on/off gating. CompositeGate
-AND-combines multiple ReadinessGate instances. compose_gates combines
-plain async callables without needing the full ReadinessGate protocol.
+A gate is any object with a ``wait_until_ready`` coroutine. Pass one to a
+trigger via ``ready_gate``; the trigger blocks on it before each attempt::
+
+    gate = EventGate()            # starts ready by default
+
+    trigger = PollingTrigger(source, worker, config, ready_gate=gate)
+    trigger.run()
+
+    # From another coroutine, block the trigger until the warehouse is ready:
+    gate.set_not_ready()
+    await warehouse.wait_for_connection()
+    gate.set_ready()
+
+To require multiple conditions simultaneously, use ``CompositeGate``::
+
+    db_gate = EventGate()
+    warehouse_gate = EventGate()
+    gate = CompositeGate(db_gate, warehouse_gate)
+
+    trigger = PollingTrigger(source, worker, config, ready_gate=gate)
+    trigger.run()
+
+    db_gate.set_not_ready()       # trigger pauses; warehouse_gate still ready
+    db_gate.set_ready()           # trigger resumes only when both are ready
+
+For plain async callables (no full ``ReadinessGate`` object needed),
+``compose_gates`` combines them without requiring the protocol::
+
+    gate = compose_gates(wait_for_db, wait_for_warehouse)
+    # gate() awaits both concurrently via asyncio.gather
 """
 
 from __future__ import annotations
