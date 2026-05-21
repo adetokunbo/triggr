@@ -1,13 +1,53 @@
 """Composed trigger types: the primary public API for running async work.
 
-Each trigger assembles Lifecycle, PollingLoop, and Processor from
-standalone components rather than inheriting shared state:
+``PollingTrigger`` polls a ``Source`` on an interval and processes tasks
+in parallel, with sliding-window concurrency bounded by ``parallelism``::
 
-- PollingTrigger: polls for tasks, executes them with sliding-window
-  concurrency bounded by parallelism.
-- StreamTrigger: consumes an AsyncIterator, processes each item with
-  optional bounded concurrency via asyncio.Semaphore.
-- PeriodicTrigger: runs a fixed-interval task that is never stale.
+    from triggr import PollingTrigger, TriggerConfig
+
+    config = TriggerConfig(polling_interval=30.0, parallelism=4)
+    trigger = PollingTrigger(
+        source=PendingOrderSource(),
+        worker=FulfillmentWorker(),
+        config=config,
+    )
+    trigger.run()
+
+``StreamTrigger`` consumes an ``AsyncIterator`` — useful for event streams
+where tasks arrive unpredictably rather than on a fixed schedule::
+
+    from triggr import StreamTrigger
+
+    trigger = StreamTrigger(
+        source=payment_event_stream(),   # AsyncIterator[PaymentEvent]
+        worker=PaymentWorker(),
+        parallelism=4,
+    )
+    trigger.run()
+
+``PeriodicTrigger`` runs a task on a fixed interval. The worker receives a
+``PeriodicTask`` carrying the current timestamp; ``is_stale`` always returns
+False because there is nothing to check — the task is always fresh::
+
+    from triggr import PeriodicTrigger, PeriodicTask, Outcome
+
+    class InventorySyncWorker:
+        async def complete(self, task: PeriodicTask) -> Outcome:
+            await warehouse.sync_inventory()
+            return Outcome.SUCCESS
+
+        async def is_stale(self, task: PeriodicTask) -> bool:
+            return False
+
+    trigger = PeriodicTrigger(InventorySyncWorker(), interval=60.0)
+    trigger.run()
+
+All triggers support ``pause()``, ``resume()``, ``close()``, and
+``is_healthy()``. Pass ``paused=True`` to ``run()`` to start suspended::
+
+    trigger.run(paused=True)
+    # ... register other triggers ...
+    trigger.resume()
 """
 
 from __future__ import annotations
