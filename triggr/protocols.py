@@ -1,9 +1,56 @@
 """User-provided protocols and default implementations.
 
-Defines the interfaces callers implement to plug work into the framework:
-Source, Worker, ReadyLister, ReadinessGate, ErrorClassifier,
-TriggerMetrics, and ManagedService. Also provides NoOpMetrics and
-TransientErrors as zero-effort defaults.
+The three core protocols to implement are ``Worker``, ``Source``, and
+``ReadyLister``. The rest are optional hooks for observability and control.
+
+``Worker`` defines what to do with each task::
+
+    from triggr import Worker, Outcome
+
+    class FulfillmentWorker:
+        async def complete(self, order: Order) -> Outcome:
+            if await warehouse.ship(order):
+                return Outcome.SUCCESS
+            return Outcome.FAILED
+
+        async def is_stale(self, order: Order) -> bool:
+            return await db.is_cancelled(order.id)
+
+``Source`` defines where tasks come from::
+
+    from triggr import Source
+
+    class PendingOrderSource:
+        async def retrieve(self) -> list[Order]:
+            return await db.fetch_pending_orders(limit=50)
+
+``ReadyLister`` is for time-based work — tasks that become ready at a
+scheduled time. The framework passes the current Unix timestamp as ``now``
+and the configured parallelism as ``limit``; the lister should return only
+tasks whose scheduled time has passed, up to ``limit`` items::
+
+    from triggr import ReadyLister, ScheduledSource, PollingTrigger, TriggerConfig
+
+    class ScheduledShipmentLister:
+        async def list_ready(self, now: float, limit: int) -> list[Shipment]:
+            # dispatch_at is a Unix timestamp set when the shipment was scheduled
+            return await db.fetch_shipments(dispatch_before=now, limit=limit)
+
+    source = ScheduledSource(lister=ScheduledShipmentLister(), parallelism=4)
+    trigger = PollingTrigger(source, FulfillmentWorker(), TriggerConfig())
+
+To classify errors as transient (retry) or fatal (stop retrying)::
+
+    from triggr import ErrorClassifier, ErrorKind
+
+    class PaymentGatewayClassifier:
+        def classify(self, error: Exception) -> ErrorKind:
+            if isinstance(error, GatewayTimeoutError):
+                return ErrorKind.TRANSIENT
+            return ErrorKind.FATAL
+
+``TransientErrors`` and ``NoOpMetrics`` are zero-effort defaults used
+when no classifier or metrics implementation is provided.
 """
 
 from __future__ import annotations
