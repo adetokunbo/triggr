@@ -196,6 +196,33 @@ class TestRetryingService:
         assert not rs.is_healthy()
 
     @pytest.mark.asyncio
+    async def test_run_starts_paused(self):
+        service = FakeService()
+
+        async def factory():
+            return service
+
+        rs = RetryingService(factory, restart_interval=0.01, name="test")
+        rs.run(paused=True)
+        await asyncio.sleep(0.03)
+        assert not service.started
+
+        rs.resume()
+        await asyncio.sleep(0.03)
+        assert service.started
+        rs.close()
+
+    @pytest.mark.asyncio
+    async def test_is_healthy_before_first_service_starts(self):
+        async def factory():
+            return FakeService()
+
+        rs = RetryingService(factory, restart_interval=0.01, name="test")
+        rs.run()
+        assert rs.is_healthy()
+        rs.close()
+
+    @pytest.mark.asyncio
     async def test_blocks_on_ready_gate(self):
         gate = EventGate()
         gate.set_not_ready()

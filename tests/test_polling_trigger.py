@@ -139,3 +139,27 @@ class TestPollingTrigger:
         await asyncio.sleep(0.01)
         assert trigger.is_healthy()
         trigger.close()
+
+    @pytest.mark.asyncio
+    async def test_is_healthy_before_first_completion(self, config):
+        source = FixedSource(["x"])
+        worker = RecordingWorker[str]()
+        trigger = PollingTrigger(source, worker, config, name="test")
+        trigger.run()
+        assert trigger.is_healthy()
+        trigger.close()
+
+    @pytest.mark.asyncio
+    async def test_run_starts_paused(self, config):
+        source = FixedSource(["task"])
+        worker = RecordingWorker[str]()
+        trigger = PollingTrigger(source, worker, config, name="test")
+
+        trigger.run(paused=True)
+        await asyncio.sleep(0.03)
+        assert worker.completed == []
+
+        trigger.resume()
+        await asyncio.sleep(0.03)
+        trigger.close()
+        assert len(worker.completed) >= 1

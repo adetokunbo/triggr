@@ -80,6 +80,20 @@ class TestPeriodicTrigger:
         trigger.close()
 
     @pytest.mark.asyncio
+    async def test_run_starts_paused(self):
+        worker = RecordingWorker[PeriodicTask]()
+        trigger = PeriodicTrigger(worker, interval=0.01, name="test")
+
+        trigger.run(paused=True)
+        await asyncio.sleep(0.03)
+        assert worker.completed == []
+
+        trigger.resume()
+        await asyncio.sleep(0.03)
+        trigger.close()
+        assert len(worker.completed) >= 1
+
+    @pytest.mark.asyncio
     async def test_failure_does_not_stop_loop(self):
         worker = RecordingWorker[PeriodicTask](outcome=Outcome.FAILED)
         trigger = PeriodicTrigger(worker, interval=0.01, name="test")

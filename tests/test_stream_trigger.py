@@ -88,6 +88,37 @@ class TestStreamTrigger:
         trigger.close()
 
     @pytest.mark.asyncio
+    async def test_is_healthy_before_first_completion(self):
+        async def slow_stream():
+            await asyncio.sleep(1.0)
+            yield "a"
+
+        worker = RecordingWorker[str]()
+        trigger = StreamTrigger(slow_stream(), worker, name="test")
+        trigger.run()
+        assert trigger.is_healthy()
+        trigger.close()
+
+    @pytest.mark.asyncio
+    async def test_run_starts_paused(self):
+        async def slow_stream():
+            for item in ["a", "b", "c"]:
+                yield item
+                await asyncio.sleep(0.01)
+
+        worker = RecordingWorker[str]()
+        trigger = StreamTrigger(slow_stream(), worker, name="test")
+
+        trigger.run(paused=True)
+        await asyncio.sleep(0.03)
+        assert worker.completed == []
+
+        trigger.resume()
+        await asyncio.sleep(0.05)
+        trigger.close()
+        assert len(worker.completed) >= 1
+
+    @pytest.mark.asyncio
     async def test_retries_on_failure(self):
         worker = RecordingWorker[str]()
         worker.fail_next = ValueError("transient")
