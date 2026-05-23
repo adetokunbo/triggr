@@ -6,6 +6,7 @@ pkgs.mkShell {
     (pkgs.python313.withPackages (ps: with ps; [
       pytest
       pytest-asyncio
+      pytest-cov
     ]))
   ];
 }
