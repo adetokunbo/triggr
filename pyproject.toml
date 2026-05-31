@@ -6,8 +6,22 @@ build-backend = "hatchling.build"
 name = "triggr"
 version = "0.1.0"
 description = "Composable async trigger framework"
+readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Tim Emiola", email = "adetokunbo@emio.la" }
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Framework :: AsyncIO",
+  "Typing :: Typed",
+]
 dependencies = []
+
+[project.urls]
+Source = "https://github.com/adetokunbo/triggr"
 
 [project.optional-dependencies]
 dev = [
