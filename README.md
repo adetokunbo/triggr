@@ -1,5 +1,11 @@
 # triggr
 
+[![CI](https://github.com/adetokunbo/triggr/actions/workflows/ci.yml/badge.svg)](https://github.com/adetokunbo/triggr/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/triggr)](https://pypi.org/project/triggr/)
+[![Python](https://img.shields.io/pypi/pyversions/triggr)](https://pypi.org/project/triggr/)
+[![Coverage](https://codecov.io/gh/adetokunbo/triggr/branch/main/graph/badge.svg)](https://codecov.io/gh/adetokunbo/triggr)
+[![License](https://img.shields.io/github/license/adetokunbo/triggr)](LICENSE)
+
 Composable async trigger framework for Python.
 
 Provides building blocks for polling loops, parallel task execution,
