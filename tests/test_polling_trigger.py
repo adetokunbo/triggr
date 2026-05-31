@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
-from triggr import PollingConfig, PollingTrigger, Outcome
+from triggr import Outcome, PollingConfig, PollingTrigger
+
 from .helpers import FixedSource, RecordingWorker
 
 
@@ -99,7 +101,8 @@ class TestPollingTrigger:
 
     @pytest.mark.asyncio
     async def test_sliding_window_fills_slot_immediately(self):
-        """A free parallelism slot is filled as soon as any task finishes, not after a full batch."""
+        """A free parallelism slot is filled as soon as any task finishes,
+        not after a full batch."""
         config = PollingConfig(polling_interval=0.01, polling_jitter=0, parallelism=2)
         loop = asyncio.get_event_loop()
         t0 = loop.time()

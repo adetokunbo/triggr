@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import time
+
 import pytest
 
-from triggr import StreamTrigger, Outcome
+from triggr import Outcome, StreamTrigger
+
 from .helpers import RecordingWorker, async_iter
 
 
@@ -149,9 +151,7 @@ class TestStreamConcurrency:
 
         items = ["a", "b", "c", "d", "e"]
         worker = SlowWorker()
-        trigger = StreamTrigger(
-            async_iter(items), worker, parallelism=3, name="test"
-        )
+        trigger = StreamTrigger(async_iter(items), worker, parallelism=3, name="test")
 
         t0 = time.monotonic()
         task = trigger.run()
@@ -185,9 +185,7 @@ class TestStreamConcurrency:
                 return False
 
         items = [f"t{i}" for i in range(8)]
-        trigger = StreamTrigger(
-            async_iter(items), TrackingWorker(), parallelism=3, name="test"
-        )
+        trigger = StreamTrigger(async_iter(items), TrackingWorker(), parallelism=3, name="test")
 
         task = trigger.run()
         await task
@@ -215,9 +213,7 @@ class TestStreamConcurrency:
                 i += 1
 
         worker = SlowWorker()
-        trigger = StreamTrigger(
-            infinite_stream(), worker, parallelism=3, name="test"
-        )
+        trigger = StreamTrigger(infinite_stream(), worker, parallelism=3, name="test")
 
         trigger.run()
         await asyncio.sleep(0.05)
@@ -251,7 +247,10 @@ class TestStreamConcurrency:
 
         # Sequential: each start-end pair is contiguous
         assert order == [
-            "start-a", "end-a",
-            "start-b", "end-b",
-            "start-c", "end-c",
+            "start-a",
+            "end-a",
+            "start-b",
+            "end-b",
+            "start-c",
+            "end-c",
         ]

@@ -36,7 +36,13 @@ import time
 from typing import Awaitable, Callable
 
 from .lifecycle import Lifecycle
-from .protocols import TransientErrors, ErrorClassifier, ErrorKind, NoOpMetrics, TriggerMetrics
+from .protocols import (
+    ErrorClassifier,
+    ErrorKind,
+    NoOpMetrics,
+    TransientErrors,
+    TriggerMetrics,
+)
 
 logger = logging.getLogger(__name__)
 

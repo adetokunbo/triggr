@@ -53,7 +53,7 @@ from .protocols import (
     ReadinessGate,
     TriggerMetrics,
 )
-from .retry import LONG_RUNNING, RetryPolicy, RetriesExhausted, retry
+from .retry import LONG_RUNNING, RetriesExhausted, RetryPolicy, retry
 
 logger = logging.getLogger(__name__)
 
@@ -135,9 +135,7 @@ class RetryingService:
             self._current_task = await self._current.start()
             self._logger.info("Service started")
         except RetriesExhausted as e:
-            self._logger.error(
-                "Failed to instantiate service after retries: %s", e.last_error
-            )
+            self._logger.error("Failed to instantiate service after retries: %s", e.last_error)
             # Return False — outer loop will retry after restart_interval
 
         return False  # don't loop immediately

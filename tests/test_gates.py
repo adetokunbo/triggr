@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
 from triggr import (
-    PollingConfig,
     CompositeGate,
     EventGate,
-    PollingTrigger,
-    StreamTrigger,
     PeriodicTask,
     PeriodicTrigger,
-    Outcome,
+    PollingConfig,
+    PollingTrigger,
+    StreamTrigger,
     compose_gates,
 )
+
 from .helpers import FixedSource, RecordingWorker, async_iter
 
 
@@ -123,9 +124,7 @@ class TestTriggerWithReadinessGate:
         source = FixedSource(["task"])
         worker = RecordingWorker[str]()
 
-        trigger = PollingTrigger(
-            source, worker, config, ready_gate=gate, name="test"
-        )
+        trigger = PollingTrigger(source, worker, config, ready_gate=gate, name="test")
         trigger.run()
         await asyncio.sleep(0.05)
 
@@ -143,9 +142,7 @@ class TestTriggerWithReadinessGate:
         gate.set_not_ready()
         worker = RecordingWorker[str]()
 
-        trigger = StreamTrigger(
-            async_iter(["a", "b", "c"]), worker, ready_gate=gate, name="test"
-        )
+        trigger = StreamTrigger(async_iter(["a", "b", "c"]), worker, ready_gate=gate, name="test")
         trigger.run()
         await asyncio.sleep(0.03)
 
@@ -163,9 +160,7 @@ class TestTriggerWithReadinessGate:
         gate.set_not_ready()
         worker = RecordingWorker[PeriodicTask]()
 
-        trigger = PeriodicTrigger(
-            worker, interval=0.01, ready_gate=gate, name="test"
-        )
+        trigger = PeriodicTrigger(worker, interval=0.01, ready_gate=gate, name="test")
         trigger.run()
         await asyncio.sleep(0.05)
 

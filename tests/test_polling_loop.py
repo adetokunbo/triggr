@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
 from triggr import Lifecycle, PollingLoop
@@ -100,9 +101,7 @@ class TestPollingLoop:
                 raise ValueError("oops")
             return False
 
-        loop = PollingLoop(
-            callback, lifecycle, interval=0.01, jitter=0, max_silent_failures=10
-        )
+        loop = PollingLoop(callback, lifecycle, interval=0.01, jitter=0, max_silent_failures=10)
         loop.start()
         await asyncio.sleep(0.05)
         lifecycle.close()

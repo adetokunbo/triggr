@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
-from triggr import Lifecycle, Processor, Outcome, RetryPolicy
+from triggr import Lifecycle, Outcome, Processor, RetryPolicy
 
 
 class FailThenSucceedWorker:

@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
 from triggr import (
     Lifecycle,
-    PollingLoop,
-    StreamTrigger,
     Outcome,
+    PollingLoop,
     Processor,
     RetryPolicy,
+    StreamTrigger,
 )
+
 from .helpers import RecordingWorker
 
 
@@ -102,9 +104,7 @@ class TestPollingLoopMetrics:
         async def callback() -> bool:
             return False
 
-        loop = PollingLoop(
-            callback, lifecycle, interval=0.01, jitter=0, metrics=metrics
-        )
+        loop = PollingLoop(callback, lifecycle, interval=0.01, jitter=0, metrics=metrics)
         loop.start()
         await asyncio.sleep(0.05)
         lifecycle.close()
@@ -124,9 +124,7 @@ class TestPollingLoopMetrics:
                 raise ValueError("fail")
             return False
 
-        loop = PollingLoop(
-            callback, lifecycle, interval=0.01, jitter=0, metrics=metrics
-        )
+        loop = PollingLoop(callback, lifecycle, interval=0.01, jitter=0, metrics=metrics)
         loop.start()
         await asyncio.sleep(0.05)
         lifecycle.close()
@@ -180,9 +178,7 @@ class TestStreamTriggerTimedHealth:
             await asyncio.sleep(10.0)  # stuck after first
 
         worker = RecordingWorker[str]()
-        trigger = StreamTrigger(
-            slow_stream(), worker, grace_period=0.03, name="test"
-        )
+        trigger = StreamTrigger(slow_stream(), worker, grace_period=0.03, name="test")
 
         trigger.run()
         await asyncio.sleep(0.02)  # first task completes

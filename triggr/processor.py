@@ -38,16 +38,16 @@ import logging
 import time
 from typing import Awaitable, Callable, Generic, TypeVar
 
-from .protocols import Outcome
 from .protocols import (
-    TransientErrors,
     ErrorClassifier,
     ErrorKind,
     NoOpMetrics,
-    Worker,
+    Outcome,
+    TransientErrors,
     TriggerMetrics,
+    Worker,
 )
-from .retry import DEFAULT, RetryPolicy, RetriesExhausted, retry
+from .retry import DEFAULT, RetriesExhausted, RetryPolicy, retry
 
 T = TypeVar("T")
 

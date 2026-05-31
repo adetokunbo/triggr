@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from triggr import Outcome, Processor, RetryPolicy
+
 from .helpers import RecordingWorker
 
 

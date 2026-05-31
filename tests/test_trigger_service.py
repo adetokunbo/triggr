@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
 from triggr import (
-    PollingConfig,
-    TriggerService,
     PeriodicTask,
     PeriodicTrigger,
+    PollingConfig,
     PollingTrigger,
-    Outcome,
+    TriggerService,
 )
+
 from .helpers import FixedSource, RecordingWorker
 
 

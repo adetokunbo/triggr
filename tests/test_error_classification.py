@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
 from triggr import (
-    TransientErrors,
     ErrorKind,
     Lifecycle,
-    PollingLoop,
     Outcome,
+    PollingLoop,
     Processor,
     RetryPolicy,
+    TransientErrors,
 )
 
 
@@ -89,7 +90,10 @@ class TestErrorClassificationInPollingLoop:
             raise ValueError("fatal")
 
         loop = PollingLoop(
-            callback, lifecycle, interval=0.01, jitter=0,
+            callback,
+            lifecycle,
+            interval=0.01,
+            jitter=0,
             error_classifier=FatalOnValueError(),
         )
         task = loop.start()
@@ -108,7 +112,10 @@ class TestErrorClassificationInPollingLoop:
             raise RuntimeError("transient")
 
         loop = PollingLoop(
-            callback, lifecycle, interval=0.01, jitter=0,
+            callback,
+            lifecycle,
+            interval=0.01,
+            jitter=0,
             error_classifier=FatalOnValueError(),
         )
         loop.start()

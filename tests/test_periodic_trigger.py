@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
-from triggr import PeriodicTask, PeriodicTrigger, Outcome
+from triggr import Outcome, PeriodicTask, PeriodicTrigger
+
 from .helpers import RecordingWorker
 
 

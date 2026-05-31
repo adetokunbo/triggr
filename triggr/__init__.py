@@ -25,11 +25,11 @@ Typical usage::
     trigger.run()
 """
 
+from .gates import CompositeGate, EventGate, compose_gates
 from .lifecycle import Lifecycle
 from .polling_loop import PollingLoop
 from .processor import Processor
 from .protocols import (
-    TransientErrors,
     ErrorClassifier,
     ErrorKind,
     HasHealth,
@@ -39,15 +39,21 @@ from .protocols import (
     ReadinessGate,
     ReadyLister,
     Source,
-    Worker,
+    TransientErrors,
     TriggerMetrics,
+    Worker,
 )
-from .gates import CompositeGate, EventGate, compose_gates
 from .retry import DEFAULT, LONG_RUNNING, RetryPolicy
-from .scheduled import ReadyTask, ScheduledSource
 from .retrying_service import RetryingService
+from .scheduled import ReadyTask, ScheduledSource
 from .trigger_service import TriggerService
-from .triggers import PeriodicTask, PeriodicTrigger, PollingConfig, PollingTrigger, StreamTrigger
+from .triggers import (
+    PeriodicTask,
+    PeriodicTrigger,
+    PollingConfig,
+    PollingTrigger,
+    StreamTrigger,
+)
 
 __all__ = [
     "PollingConfig",

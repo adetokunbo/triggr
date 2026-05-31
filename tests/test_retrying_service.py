@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
 
-from triggr import EventGate, Lifecycle, RetryingService, RetryPolicy
+from triggr import EventGate, RetryingService, RetryPolicy
 
 
 class FakeService:
@@ -39,11 +40,7 @@ class FakeService:
             self._task.cancel()
 
     def is_active(self) -> bool:
-        return (
-            self._task is not None
-            and not self._task.done()
-            and not self._closed
-        )
+        return self._task is not None and not self._task.done() and not self._closed
 
 
 class TestRetryingService:
@@ -231,9 +228,7 @@ class TestRetryingService:
         async def factory():
             return service
 
-        rs = RetryingService(
-            factory, restart_interval=0.01, ready_gate=gate, name="test"
-        )
+        rs = RetryingService(factory, restart_interval=0.01, ready_gate=gate, name="test")
         rs.run()
         await asyncio.sleep(0.03)
 

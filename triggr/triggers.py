@@ -66,8 +66,8 @@ from .protocols import (
     ErrorClassifier,
     ReadinessGate,
     Source,
-    Worker,
     TriggerMetrics,
+    Worker,
 )
 from .retry import DEFAULT, RetryPolicy
 
